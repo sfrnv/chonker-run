@@ -1,0 +1,6 @@
+[submodule "cmake/sdl2"]
+	path = cmake/sdl2
+	url = https://gitlab.com/aminosbh/sdl2-cmake-modules.git
+[submodule "external/entt"]
+	path = external/entt
+	url = git@github.com:skypjack/entt.git
