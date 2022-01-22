@@ -7,8 +7,9 @@
 #include <entt/entt.hpp>
 
 class Render {
-  bool updated = false;
 public:
+  bool updated = false;
+
   Render(int width, int height, std::string header, std::string background);
   ~Render();
 
