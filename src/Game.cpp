@@ -1,5 +1,5 @@
-#include <chrono>
 #include <SDL.h>
+#include <chrono>
 #include <entt/entt.hpp>
 
 #include "Game.hpp"
@@ -14,15 +14,7 @@ struct velocity {
   float dy;
 };
 
-void Game::run() {
-  using namespace std::chrono;
-
-  auto previous = high_resolution_clock::now();
-  auto timer = high_resolution_clock::now();
-  auto ticks = 0;
-  auto delta = 0.0;
-
-  entt::registry registry;
+void Game::init() {
 
   for (auto i = 0u; i < 10u; ++i) {
     const auto entity = registry.create();
@@ -33,12 +25,24 @@ void Game::run() {
     } else {
       registry.emplace<velocity>(entity, .0f, .0f);
     }
+    registry.emplace<SDL_Rect>(entity, SDL_Rect{32, 0, 16, 16});
   }
+
+}
+
+void Game::run() {
+  using namespace std::chrono;
+
+  auto previous = high_resolution_clock::now();
+  auto timer = high_resolution_clock::now();
+  auto ticks = 0;
+  auto frames = 0;
+  auto delta = 0.0;
 
   SDL_Event event;
 
   // Enter the main loop. Press any key or hit the x to exit.
-  for (; event.type != SDL_QUIT && event.type != SDL_KEYDOWN;
+  for (auto delta = 0.0; event.type != SDL_QUIT && event.type != SDL_KEYDOWN;
        SDL_PollEvent(&event)) {
     auto current = high_resolution_clock::now();
     delta +=
@@ -46,35 +50,43 @@ void Game::run() {
 
     for (previous = current; delta >= 1.0; --delta) {
       update(registry);
-      render.update();
       ticks++;
     }
 
-    if (current - timer >= seconds{1}) {
-      render.update_title(std::to_string(ticks));
-      timer += seconds{1};
-      ticks = 0;
+    SDL_Delay(10);
+
+    if (render.updated) {
+      render.update();
+      render.updated = false;
+      frames++;
     }
 
-    SDL_Delay(10);
+    if (current - timer >= seconds{1}) {
+      render.update_title("ticks: " + std::to_string(ticks) +
+                          "; frames: " + std::to_string(frames));
+      timer += seconds{1};
+      ticks = 0;
+      frames = 0;
+    }
   }
 }
 
 void Game::update(entt::registry &registry) {
-  auto view = registry.view<const std::string, position, velocity>();
+  auto view = registry.view<const std::string, position, velocity, SDL_Rect>();
 
   // use a callback
-  view.each([&](const auto &name, auto &pos, auto &vel) {
+  view.each([&](const auto &name, auto &pos, auto &vel, auto &tile) {
     pos.x += vel.dx;
     pos.y += vel.dy;
+    render.add(SDL_Rect{(int)pos.x, (int)pos.y, 16, 16}, tile);
   });
 
   // use an extended callback
-  view.each([](const auto entity, const auto &name, auto &pos,
-               auto &vel) { /* ... */ });
+  view.each([](const auto entity, const auto &name, auto &pos, auto &vel,
+               auto &rect) { /* ... */ });
 
   // use a range-for
-  for (auto [entity, name, pos, vel] : view.each()) {
+  for (auto [entity, name, pos, vel, rect] : view.each()) {
     // ...
   }
 
