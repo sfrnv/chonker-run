@@ -1,6 +1,12 @@
 #include <string>
 
+#ifndef RENDER_H
+#define RENDER_H
+
 #include "Render.hpp"
+
+#endif
+#include "World.hpp"
 
 constexpr auto WINDOW_WIDTH = 640;
 constexpr auto WINDOW_HEIGHT = 480;
@@ -10,13 +16,13 @@ constexpr auto TICKS_PER_NSEC = TICKS_PER_SEC / 1e9;
 
 class Game {
 public:
-  Game(std::string header, std::string background) : render{WINDOW_WIDTH, WINDOW_HEIGHT, header, background} {};
-  void init();
+  Game(const std::string &title, const std::string &sprite_path,
+       const std::string &level_path)
+      : render{WINDOW_WIDTH, WINDOW_HEIGHT, title, sprite_path},
+        world{level_path} {};
   void run();
 
 private:
   Render render;
-  entt::registry registry;
-
-  void update(entt::registry &);
+  World world;
 };

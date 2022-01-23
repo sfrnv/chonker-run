@@ -10,18 +10,19 @@ class Render {
 public:
   bool updated = false;
 
-  Render(int width, int height, std::string header, std::string background);
+  Render(int width, int height, const std::string &title,
+         const std::string &path);
   ~Render();
 
-  void update();
-  void add(const SDL_Rect &pos, const SDL_Rect &tile, SDL_Texture *texture);
-  void add(const SDL_Rect &pos, const SDL_Rect &tile);
-  void update_title(const std::string &);
+  void present();
+  void set_title(const std::string &);
+  void update(const SDL_Rect &pos, const SDL_Rect &tile, SDL_Texture *texture);
+  void update(const SDL_Rect &pos, const SDL_Rect &tile);
+
+  SDL_Rect viewport;
 
 private:
-
   SDL_Window *window;     // TODO: wrap with unique_ptr
   SDL_Renderer *renderer; // TODO: wrap with unique_ptr
   SDL_Texture *texture;   // TODO: wrap with unique_ptr
-  SDL_Rect viewport;
 };
