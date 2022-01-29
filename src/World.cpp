@@ -14,18 +14,18 @@ World::World(const std::string &path) : width{0}, height{0}, updated{false} {
   if (SDL_Surface *image = IMG_Load(path.c_str())) {
     width = upscale(image->w);
     height = upscale(image->h);
-    load_tiles(image);
     // Temporary entity with camera focus:
     const auto entity = registry.create();
     registry.emplace<position>(entity, .0f, .0f);
-    registry.emplace<velocity>(entity, 1.0f, 1.0f);
+    registry.emplace<velocity>(entity, .0f, .0f);
     registry.emplace<focus>(entity, true);
     registry.emplace<SDL_Rect>(entity, SDL_Rect{
-                                           0,
-                                           0,
+                                           16,
+                                           224,
                                            upscale(1),
                                            upscale(1),
                                        });
+    load_tiles(image);
   }
 }
 
@@ -107,9 +107,72 @@ void World::load_tiles(SDL_Surface *image) {
 }
 
 void World::update(Render &render) {
+  handle_input();
   move_entities();
   focus_camera(render);
   render_entities(render);
+}
+
+void World::handle_input() {
+  auto view = registry.view<velocity, focus>();
+  SDL_Event event;
+  view.each([&](auto &vel, auto &focus) {
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_KEYDOWN, SDL_KEYUP) >
+           0) {
+      switch (event.type) {
+      case SDL_KEYDOWN:
+        switch (event.key.keysym.sym) {
+        case SDLK_a:
+        case SDLK_LEFT:
+          vel.dx = -1.0f;
+          break;
+        case SDLK_d:
+        case SDLK_RIGHT:
+          vel.dx = 1.0f;
+          break;
+        case SDLK_w:
+        case SDLK_UP:
+          vel.dy = -1.0f;
+          break;
+        case SDLK_s:
+        case SDLK_DOWN:
+          vel.dy = 1.0f;
+          break;
+        default:
+          break;
+        }
+        break;
+      case SDL_KEYUP:
+        switch (event.key.keysym.sym) {
+        case SDLK_a:
+        case SDLK_LEFT:
+          if (vel.dx < .0f)
+            vel.dx = .0f;
+          break;
+        case SDLK_d:
+        case SDLK_RIGHT:
+          if (vel.dx > .0f)
+            vel.dx = .0f;
+          break;
+        case SDLK_w:
+        case SDLK_UP:
+          if (vel.dy < .0f)
+            vel.dy = .0f;
+          break;
+        case SDLK_s:
+        case SDLK_DOWN:
+          if (vel.dy > .0f)
+            vel.dy = .0f;
+          break;
+        default:
+          break;
+        }
+        break;
+      default:
+        break;
+      }
+    }
+  });
 }
 
 void World::move_entities() {

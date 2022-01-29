@@ -13,16 +13,15 @@ void Game::run() {
   auto frames = 0;
   auto delta = 0.0;
 
-  SDL_Event event;
-
-  // Enter the main loop. Press any key or hit the x to exit.
-  for (auto delta = 0.0; event.type != SDL_QUIT && event.type != SDL_KEYDOWN;
-       SDL_PollEvent(&event)) {
+  // Enter the main loop. Press x to exit.
+  while (!SDL_HasEvent(SDL_QUIT)) {
     auto current = high_resolution_clock::now();
     delta +=
         duration_cast<nanoseconds>(current - previous).count() * TICKS_PER_NSEC;
 
     for (previous = current; delta >= 1.0; --delta) {
+      SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+      SDL_PumpEvents();
       world.update(render);
       ticks++;
     }

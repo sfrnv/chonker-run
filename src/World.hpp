@@ -51,6 +51,7 @@ private:
   entt::registry registry;
 
   void load_tiles(SDL_Surface *image);
+  void handle_input();
   void move_entities();
   void focus_camera(Render &render);
   void render_entities(Render &render);
