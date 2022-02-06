@@ -4,8 +4,6 @@
 #include <string>
 #include <vector>
 
-#include <entt/entt.hpp>
-
 constexpr unsigned int NULL_NODE = 0xFFFFFFFF;
 
 namespace aabb {
@@ -24,9 +22,7 @@ private:
 struct Node {
   Node();
 
-  entt::entity id;
-
-  AABB *aabb;
+  AABB aabb;
   AABB fatten;
 
   unsigned int next;
@@ -36,23 +32,26 @@ struct Node {
 
   bool is_leaf() const;
   bool is_valid();
-  void set_leaf(AABB *aabb);
+  void set_leaf(const AABB &aabb);
   void set_branch(unsigned int left, unsigned int right);
   void update_AABB(float margin);
 };
 
 class Tree {
 public:
-  Tree(unsigned int margin, unsigned int capacity);
-  ~Tree();
+  Tree(float margin, unsigned int capacity);
+  ~Tree(){};
 
-  unsigned int add(AABB *aabb);
-  AABB *remove(unsigned int node);
+  unsigned int add(const AABB &aabb);
+  void remove(unsigned int node);
   void update();
   // ColliderPairList &ComputePairs();
   // Collider *Pick(const Vec3 &point) const;
   // Query(const AABB &aabb, ColliderList &out) const;
   // RayCastResult RayCast(const Ray3 &ray) const;
+
+  const Node &operator[](const unsigned int i) const { return nodes[i]; }
+  Node &operator[](const unsigned int i) { return nodes[i]; }
 
 private:
   // typedef std::vector<Node *> NodeList;
@@ -71,11 +70,11 @@ private:
   unsigned int alloc_node();
   void free_node(unsigned int node);
 
-  void insert_node(unsigned int node, unsigned int parent);
-  AABB *remove_node(unsigned int node);
+  void insert_node(unsigned int node, unsigned int &target);
+  void remove_node(unsigned int node);
   void pull_node(unsigned int node);
-  void find_invalid_nodes(unsigned int node,
-                          std::vector<unsigned int> &invalid_nodes);
+  void update_node(unsigned int node, float margin);
+  void check_nodes(unsigned int node, std::vector<unsigned int> &invalid_nodes);
 };
 
 } // namespace aabb

@@ -10,13 +10,17 @@ Uint32 get_pixel32(SDL_Surface *surface, int x, int y) {
 
 inline auto upscale(int a) { return a << SCALING_FACTOR; }
 
-World::World(const std::string &path) : width{0}, height{0}, updated{false} {
+World::World(const std::string &path)
+    : width{0}, height{0}, updated{false}, tree{1.0f, 256} {
   if (SDL_Surface *image = IMG_Load(path.c_str())) {
     width = upscale(image->w);
     height = upscale(image->h);
     // Temporary entity with camera focus:
     const auto entity = registry.create();
     registry.emplace<position>(entity, .0f, .0f);
+    registry.emplace<body>(
+        entity,
+        tree.add(aabb::AABB{upscale(0), upscale(0), upscale(1), upscale(1)}));
     registry.emplace<velocity>(entity, .0f, .0f);
     registry.emplace<focus>(entity, true);
     registry.emplace<SDL_Rect>(entity, SDL_Rect{
@@ -39,6 +43,9 @@ void World::load_tiles(SDL_Surface *image) {
         registry.emplace<std::string>(entity, std::to_string(x));
         registry.emplace<position>(entity, (float)upscale(x),
                                    (float)upscale(y));
+        registry.emplace<body>(
+            entity, tree.add(aabb::AABB{upscale(x), upscale(y), upscale(x + 1),
+                                        upscale(y + 1)}));
         registry.emplace<velocity>(entity, .0f, .0f);
         registry.emplace<SDL_Rect>(entity,
                                    SDL_Rect{16, 0, upscale(1), upscale(1)});
@@ -83,6 +90,9 @@ void World::load_tiles(SDL_Surface *image) {
         registry.emplace<std::string>(entity, std::to_string(x));
         registry.emplace<position>(entity, (float)upscale(x),
                                    (float)upscale(y));
+        registry.emplace<body>(
+            entity, tree.add(aabb::AABB{upscale(x), upscale(y), upscale(x + 1),
+                                        upscale(y + 1)}));
         registry.emplace<velocity>(entity, .0f, .0f);
         registry.emplace<SDL_Rect>(entity,
                                    SDL_Rect{64, 0, upscale(1), upscale(1)});
@@ -109,6 +119,7 @@ void World::load_tiles(SDL_Surface *image) {
 void World::update(Render &render) {
   handle_input();
   move_entities();
+  tree.update();
   focus_camera(render);
   render_entities(render);
 }
@@ -176,17 +187,21 @@ void World::handle_input() {
 }
 
 void World::move_entities() {
-  auto view = registry.view<position, velocity>();
-  view.each([&](auto &pos, auto &vel) {
+  auto view = registry.view<position, velocity, body>();
+  view.each([&](auto &pos, auto &vel, auto &node) {
     pos.x += vel.dx;
     pos.y += vel.dy;
+    tree[node].aabb.x1 += vel.dx;
+    tree[node].aabb.y1 += vel.dy;
+    tree[node].aabb.x2 += vel.dx;
+    tree[node].aabb.y2 += vel.dy;
   });
 }
 
 void World::focus_camera(Render &render) {
   auto view = registry.view<position, focus>();
   view.each([&](auto &pos, auto &focus) {
-    if (focus.focused) {
+    if (focus) {
       int x_offset = pos.x - render.viewport.w / 2;
       int y_offset = pos.y - render.viewport.h / 2;
       if (x_offset < 0) {

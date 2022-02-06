@@ -1,9 +1,5 @@
 #include <string>
 
-#include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_rect.h>
-
 #include <entt/entt.hpp>
 
 #ifndef RENDER_H
@@ -12,6 +8,8 @@
 #include "Render.hpp"
 
 #endif
+
+#include "AABB.hpp"
 
 constexpr auto SCALING_FACTOR = 4;
 
@@ -32,9 +30,9 @@ struct velocity {
   float dy;
 };
 
-struct focus {
-  bool focused;
-};
+using body = unsigned int;
+
+using focus = bool;
 
 class World {
 public:
@@ -49,6 +47,7 @@ public:
 
 private:
   entt::registry registry;
+  aabb::Tree tree;
 
   void load_tiles(SDL_Surface *image);
   void handle_input();
