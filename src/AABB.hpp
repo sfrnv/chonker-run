@@ -12,8 +12,9 @@ class AABB {
 public:
   AABB(int x1, int y1, int x2, int y2);
   int x1, y1, x2, y2;
-  AABB unite(const AABB &);
-  bool contains(const AABB &);
+  AABB unite(const AABB &) const;
+  bool contains(const AABB &) const;
+  bool overlaps(const AABB &) const;
   unsigned int area();
 
 private:
@@ -45,6 +46,7 @@ public:
   unsigned int add(const AABB &aabb);
   void remove(unsigned int node);
   void update();
+  std::vector<unsigned int> query(unsigned int node) const;
   // ColliderPairList &ComputePairs();
   // Collider *Pick(const Vec3 &point) const;
   // Query(const AABB &aabb, ColliderList &out) const;

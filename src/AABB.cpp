@@ -7,13 +7,17 @@ namespace aabb {
 
 AABB::AABB(int x1, int y1, int x2, int y2) : x1(x1), y1(y1), x2(x2), y2(y2){};
 
-AABB AABB::unite(const AABB &aabb) {
+AABB AABB::unite(const AABB &aabb) const {
   return AABB(std::min(x1, aabb.x1), std::min(y1, aabb.y1),
               std::max(x2, aabb.x2), std::max(y2, aabb.y2));
 };
 
-bool AABB::contains(const AABB &aabb) {
+bool AABB::contains(const AABB &aabb) const {
   return x1 <= aabb.x1 && y1 <= aabb.y1 && x2 >= aabb.x2 && y2 >= aabb.y2;
+}
+
+bool AABB::overlaps(const AABB &aabb) const {
+  return !(x1 >= aabb.x2 || y1 >= aabb.y2 || x2 <= aabb.x1 || y2 <= aabb.y1);
 }
 
 unsigned int AABB::area() { return (x2 - x1) * (y2 - y1); }
@@ -67,6 +71,36 @@ void Tree::update() {
   }
 }
 
+std::vector<unsigned int> Tree::query(unsigned int node) const {
+  std::vector<unsigned int> stack;
+  stack.reserve(256);
+  stack.push_back(root);
+
+  std::vector<unsigned int> result;
+
+  while (stack.size()) {
+    unsigned int current = stack.back();
+    stack.pop_back();
+
+    if (current == NULL_NODE)
+      continue;
+
+    // Test for overlap between the AABBs.
+    if (nodes[current].aabb.overlaps(nodes[node].aabb)) {
+      // Check that we're at a leaf node.
+      if (nodes[current].is_leaf()) {
+        // Can't interact with itself.
+        if (current != node) {
+          result.push_back(current);
+        }
+      } else {
+        stack.push_back(nodes[current].left);
+        stack.push_back(nodes[current].right);
+      }
+    }
+  }
+}
+
 unsigned int Tree::alloc_node() {
   if (empty_node == NULL_NODE) {
 
@@ -74,7 +108,6 @@ unsigned int Tree::alloc_node() {
     assert(count == capacity);
 
     // Double pool
-    // capacity *= 2;
     nodes.resize(capacity *= 2);
 
     // Continue linked list
