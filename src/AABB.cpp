@@ -99,6 +99,7 @@ std::vector<unsigned int> Tree::query(unsigned int node) const {
       }
     }
   }
+  return result;
 }
 
 unsigned int Tree::alloc_node() {
@@ -166,8 +167,8 @@ void Tree::insert_node(unsigned int node, unsigned int &target) {
       insert_node(node, right);
     }
 
-    // Propagates back up the recursion stack
-    update_node(target, margin);
+  // Propagates back up the recursion stack
+  update_node(target, margin);
   }
 }
 
