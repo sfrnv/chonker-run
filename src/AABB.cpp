@@ -144,8 +144,12 @@ void Tree::insert_node(unsigned int node, unsigned int &target) {
   if (nodes[target].is_leaf()) {
     // Terget is leaf, simply split
     auto branch = alloc_node();
-    nodes[branch].parent = nodes[target].parent;
     // Make it branch
+    if (auto grandparent = nodes[target].parent; grandparent != NULL_NODE) {
+      nodes[branch].parent = grandparent;
+      (nodes[grandparent].left == target ? nodes[grandparent].left
+                                         : nodes[grandparent].right) = branch;
+    }
     nodes[branch].left = node;
     nodes[branch].right = target;
     nodes[node].parent = branch;
@@ -166,10 +170,9 @@ void Tree::insert_node(unsigned int node, unsigned int &target) {
     } else {
       insert_node(node, right);
     }
-
+  }
   // Propagates back up the recursion stack
   update_node(target, margin);
-  }
 }
 
 void Tree::remove_node(unsigned int node) {
