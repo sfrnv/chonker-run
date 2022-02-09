@@ -1,5 +1,5 @@
 #include "World.hpp"
-
+#include <iostream>
 Uint32 get_pixel32(SDL_Surface *surface, int x, int y) {
   // Convert the pixels to 32 bit
   Uint32 *pixels = (Uint32 *)surface->pixels;
@@ -119,7 +119,7 @@ void World::load_tiles(SDL_Surface *image) {
 void World::update(Render &render) {
   handle_input();
   move_entities();
-  tree.update();
+  detect_collistions();
   focus_camera(render);
   render_entities(render);
 }
@@ -148,6 +148,9 @@ void World::handle_input() {
         case SDLK_s:
         case SDLK_DOWN:
           vel.dy = 1.0f;
+          break;
+        case SDLK_p:
+          tree.print();
           break;
         default:
           break;
@@ -196,6 +199,21 @@ void World::move_entities() {
     tree[node].aabb.x2 += vel.dx;
     tree[node].aabb.y2 += vel.dy;
   });
+}
+
+void World::detect_collistions() {
+  // std::cout << "World::detect_collistions()\n";
+  tree.update();
+  // tree.print();
+  // std::vector<std::pair<unsigned int, unsigned int>> collisions =
+  //     tree.overlaps();
+  // if (!collisions.empty()) {
+  //   std::cout << "Detected collisions: \n";
+  //   for (auto &&i : collisions) {
+  //     std::cout << "node[" << std::to_string(i.first) << "] and node["
+  //               << std::to_string(i.second) << "]\n";
+  //   }
+  // }
 }
 
 void World::focus_camera(Render &render) {

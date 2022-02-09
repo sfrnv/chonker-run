@@ -46,7 +46,9 @@ public:
   unsigned int add(const AABB &aabb);
   void remove(unsigned int node);
   void update();
+  void print();
   std::vector<unsigned int> query(unsigned int node) const;
+  std::vector<std::pair<unsigned int, unsigned int>> overlaps() const;
   // ColliderPairList &ComputePairs();
   // Collider *Pick(const Vec3 &point) const;
   // Query(const AABB &aabb, ColliderList &out) const;
@@ -77,6 +79,12 @@ private:
   void pull_node(unsigned int node);
   void update_node(unsigned int node, float margin);
   void check_nodes(unsigned int node, std::vector<unsigned int> &invalid_nodes);
+  void get_overlaps(unsigned int n0, unsigned int n1,
+                    std::vector<std::pair<unsigned int, unsigned int>> &result,
+                    std::vector<bool> &checked) const;
+  void get_overlaps(unsigned int node,
+                    std::vector<std::pair<unsigned int, unsigned int>> &result,
+                    std::vector<bool> &checked) const;
 };
 
 } // namespace aabb

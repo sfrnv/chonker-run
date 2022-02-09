@@ -1,5 +1,6 @@
 #include <cmath>
 #include <exception>
+#include <iostream>
 
 #include "AABB.hpp"
 
@@ -67,6 +68,16 @@ void Tree::update() {
         update_node(node, margin);
         insert_node(node, root);
       }
+      for (auto &node : invalid_nodes) {
+        std::vector<unsigned int> overlaps = query(node);
+        if (!overlaps.empty()) {
+          std::cout << "Node " << node << " overlaps with the following nodes:";
+          for (auto &o : overlaps) {
+            std::cout << " " << o << ",";
+          }
+          std::cout << std::endl;
+        }
+      }
     }
   }
 }
@@ -100,6 +111,136 @@ std::vector<unsigned int> Tree::query(unsigned int node) const {
     }
   }
   return result;
+}
+
+// Use to print current tree (from left to right)
+void Tree::print() {
+  std::vector<unsigned int> stack;
+  stack.reserve(256);
+  stack.push_back(root);
+
+  std::vector<unsigned int> result;
+
+  while (stack.size()) {
+    auto current = stack.back();
+    stack.pop_back();
+
+    if (current == NULL_NODE)
+      continue;
+
+    std::cout << "node[" << current << "] ";
+    if (nodes[current].is_leaf()) {
+      std::cout << "leaf\n";
+      continue;
+    }
+    std::cout << "branch\n";
+
+    stack.push_back(nodes[current].right);
+    stack.push_back(nodes[current].left);
+  }
+}
+
+// Unfinished
+std::vector<std::pair<unsigned int, unsigned int>> Tree::overlaps() const {
+  if (root == NULL_NODE || nodes[root].is_leaf())
+    return {};
+
+  // std::vector<unsigned int> stack;
+  // stack.reserve(256);
+  // stack.push_back(nodes[root].left);
+  // stack.push_back(nodes[root].right);
+
+  std::vector<std::pair<unsigned int, unsigned int>> result;
+  std::vector<bool> checked(count, false);
+
+  get_overlaps(nodes[root].left, nodes[root].right, result, checked);
+  // while (stack.size() > 1) {
+  //   unsigned int n0 = stack.back();
+  //   unsigned int n1 = stack.back();
+  //   stack.pop_back();
+  //   stack.pop_back();
+
+  //   // Move on only if nodes have overlaps
+  //   if (nodes[n0].aabb.overlaps(nodes[n1].aabb)) {
+  //     if (nodes[n0].is_leaf()) {
+  //       if (nodes[n1].is_leaf()) { // both nodes are leaves
+  //         result.push_back({n0, n1});
+  //       } else { // n0 is leaf, n1 is branch
+  //         stack.push_back(n0);
+  //         stack.push_back(nodes[n1].right);
+  //         stack.push_back(n0);
+  //         stack.push_back(nodes[n1].left);
+  //       }
+  //     } else if (nodes[n1].is_leaf()) { // n0 is branch, n1 is leaf
+  //       stack.push_back(n1);
+  //       stack.push_back(nodes[n0].right);
+  //       stack.push_back(n1);
+  //       stack.push_back(nodes[n0].left);
+  //     } else { // both nodes are branches
+  //       stack.push_back(n1);
+  //       stack.push_back(nodes[n0].right);
+  //       stack.push_back(n1);
+  //       stack.push_back(nodes[n0].left);
+  //       stack.push_back(n0);
+  //       stack.push_back(nodes[n1].right);
+  //       stack.push_back(n0);
+  //       stack.push_back(nodes[n1].left);
+  //     }
+  //   }
+  // }
+
+  return result;
+}
+
+//Unfinished
+void Tree::get_overlaps(
+    unsigned int n0, unsigned int n1,
+    std::vector<std::pair<unsigned int, unsigned int>> &result,
+    std::vector<bool> &checked) const {
+  // Move on only if nodes have overlaps
+  // std::cout << "Tree::get_overlaps(" << std::to_string(n0) << ", "
+  //           << std::to_string(n1) << ")\n";
+  // std::cout << "[" << std::to_string(nodes[n0].aabb.x1) << ":"
+  //           << std::to_string(nodes[n0].aabb.y1) << "] - "
+  //           << "[" << std::to_string(nodes[n0].aabb.x2) << ":"
+  //           << std::to_string(nodes[n0].aabb.y2) << "] vs "
+  //           << "[" << std::to_string(nodes[n1].aabb.x1) << ":"
+  //           << std::to_string(nodes[n1].aabb.y1) << "] - "
+  //           << "[" << std::to_string(nodes[n1].aabb.x2) << ":"
+  //           << std::to_string(nodes[n1].aabb.y2) << "]\n";
+  if (nodes[n0].is_leaf()) {
+    if (nodes[n1].is_leaf()) { // both nodes are leaves
+      if (nodes[n0].aabb.overlaps(nodes[n1].aabb)) {
+        result.push_back({n0, n1});
+      }
+    } else { // n0 is leaf, n1 is branch
+      get_overlaps(n1, result, checked);
+      get_overlaps(n0, nodes[n1].left, result, checked);
+      get_overlaps(n0, nodes[n1].right, result, checked);
+    }
+  } else if (nodes[n1].is_leaf()) { // n0 is branch, n1 is leaf
+    get_overlaps(n0, result, checked);
+    get_overlaps(n1, nodes[n0].left, result, checked);
+    get_overlaps(n1, nodes[n0].right, result, checked);
+  } else { // both nodes are branches
+    get_overlaps(n0, result, checked);
+    get_overlaps(n1, result, checked);
+    get_overlaps(n0, nodes[n1].left, result, checked);
+    get_overlaps(n0, nodes[n1].right, result, checked);
+    get_overlaps(n1, nodes[n0].left, result, checked);
+    get_overlaps(n1, nodes[n0].right, result, checked);
+  }
+}
+
+// Unfinished
+void Tree::get_overlaps(
+    unsigned int node,
+    std::vector<std::pair<unsigned int, unsigned int>> &result,
+    std::vector<bool> &checked) const {
+  if (!checked[node]) {
+    get_overlaps(nodes[node].left, nodes[node].right, result, checked);
+    checked[node] = true;
+  }
 }
 
 unsigned int Tree::alloc_node() {
