@@ -62,7 +62,7 @@ void Tree::update() {
       std::vector<unsigned int> invalid_nodes;
       invalid_nodes.reserve(64); // TODO: replace hardcoded constant
       check_nodes(root, invalid_nodes);
-      for (auto node : invalid_nodes) {
+      for (auto &node : invalid_nodes) {
         pull_node(node);
         update_node(node, margin);
         insert_node(node, root);
@@ -79,7 +79,7 @@ std::vector<unsigned int> Tree::query(unsigned int node) const {
   std::vector<unsigned int> result;
 
   while (stack.size()) {
-    unsigned int current = stack.back();
+    auto current = stack.back();
     stack.pop_back();
 
     if (current == NULL_NODE)
@@ -94,8 +94,8 @@ std::vector<unsigned int> Tree::query(unsigned int node) const {
           result.push_back(current);
         }
       } else {
-        stack.push_back(nodes[current].left);
         stack.push_back(nodes[current].right);
+        stack.push_back(nodes[current].left);
       }
     }
   }
@@ -213,6 +213,7 @@ void Tree::update_node(unsigned int node, float margin) {
   } else {
     auto left = nodes[node].left;
     auto right = nodes[node].right;
+    nodes[node].aabb = nodes[left].aabb.unite(nodes[right].aabb);
     nodes[node].fatten = nodes[left].fatten.unite(nodes[right].fatten);
   }
 }
