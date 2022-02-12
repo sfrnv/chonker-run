@@ -119,8 +119,6 @@ void Tree::print() {
   stack.reserve(256);
   stack.push_back(root);
 
-  std::vector<unsigned int> result;
-
   while (stack.size()) {
     auto current = stack.back();
     stack.pop_back();
