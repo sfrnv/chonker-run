@@ -46,7 +46,6 @@ public:
   World(const std::string &path);
   ~World(){};
 
-  void init(std::string level);
   void update(Render &render);
 
 private:
