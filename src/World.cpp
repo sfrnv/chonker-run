@@ -1,6 +1,5 @@
 #include "World.hpp"
 #include <cmath>
-#include <iostream>
 
 Uint32 get_pixel32(SDL_Surface *surface, int x, int y) {
   // Convert the pixels to 32 bit
@@ -43,7 +42,6 @@ void World::load_tiles(SDL_Surface *image) {
       case STONE_PIXEL: // stone
       {
         const auto entity = registry.create();
-        registry.emplace<std::string>(entity, std::to_string(x));
         registry.emplace<position>(entity, (float)upscale(x),
                                    (float)upscale(y));
         registry.emplace<body>(
@@ -59,10 +57,8 @@ void World::load_tiles(SDL_Surface *image) {
       case GRASS_PIXEL: // grass
       {
         const auto entity = registry.create();
-        registry.emplace<std::string>(entity, std::to_string(x));
         registry.emplace<position>(entity, (float)upscale(x),
                                    (float)upscale(y));
-        registry.emplace<velocity>(entity, .0f, .0f);
         registry.emplace<SDL_Rect>(entity,
                                    SDL_Rect{32, 0, upscale(1), upscale(1)});
         break;
@@ -70,10 +66,8 @@ void World::load_tiles(SDL_Surface *image) {
       case WATER_PIXEL: // water
       {
         const auto entity = registry.create();
-        registry.emplace<std::string>(entity, std::to_string(x));
         registry.emplace<position>(entity, (float)upscale(x),
                                    (float)upscale(y));
-        registry.emplace<velocity>(entity, .0f, .0f);
         registry.emplace<SDL_Rect>(entity,
                                    SDL_Rect{0, 32, upscale(1), upscale(1)});
         break;
@@ -81,10 +75,8 @@ void World::load_tiles(SDL_Surface *image) {
       case SAND_PIXEL: // sand
       {
         const auto entity = registry.create();
-        registry.emplace<std::string>(entity, std::to_string(x));
         registry.emplace<position>(entity, (float)upscale(x),
                                    (float)upscale(y));
-        registry.emplace<velocity>(entity, .0f, .0f);
         registry.emplace<SDL_Rect>(entity,
                                    SDL_Rect{48, 0, upscale(1), upscale(1)});
         break;
@@ -92,7 +84,6 @@ void World::load_tiles(SDL_Surface *image) {
       case BRICK_PIXEL: // brick
       {
         const auto entity = registry.create();
-        registry.emplace<std::string>(entity, std::to_string(x));
         registry.emplace<position>(entity, (float)upscale(x),
                                    (float)upscale(y));
         registry.emplace<body>(
@@ -108,10 +99,8 @@ void World::load_tiles(SDL_Surface *image) {
       case LAVA_PIXEL: // lava
       {
         const auto entity = registry.create();
-        registry.emplace<std::string>(entity, std::to_string(x));
         registry.emplace<position>(entity, (float)upscale(x),
                                    (float)upscale(y));
-        registry.emplace<velocity>(entity, .0f, .0f);
         registry.emplace<SDL_Rect>(entity,
                                    SDL_Rect{0, 48, upscale(1), upscale(1)});
         break;
