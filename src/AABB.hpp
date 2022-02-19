@@ -1,6 +1,8 @@
 #ifndef AABB_H
 #define AABB_H
 
+#include <entt/entt.hpp>
+
 #include <string>
 #include <vector>
 
@@ -23,6 +25,8 @@ private:
 struct Node {
   Node();
 
+  entt::entity id;
+
   AABB aabb;
   AABB fatten;
 
@@ -43,11 +47,11 @@ public:
   Tree(float margin, unsigned int capacity);
   ~Tree(){};
 
-  unsigned int add(const AABB &aabb);
+  unsigned int add(entt::entity id, const AABB &aabb);
   void remove(unsigned int node);
   void update();
   void print();
-  std::vector<unsigned int> query(unsigned int node) const;
+  std::vector<entt::entity> query(unsigned int node) const;
   std::vector<std::pair<unsigned int, unsigned int>> overlaps() const;
   // ColliderPairList &ComputePairs();
   // Collider *Pick(const Vec3 &point) const;

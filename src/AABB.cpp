@@ -24,8 +24,8 @@ bool AABB::overlaps(const AABB &aabb) const {
 unsigned int AABB::area() { return (x2 - x1) * (y2 - y1); }
 
 Node::Node()
-    : aabb(0, 0, 0, 0), fatten(0, 0, 0, 0), next(NULL_NODE), parent(NULL_NODE),
-      left(NULL_NODE), right(NULL_NODE){};
+    : id(entt::null), aabb(0, 0, 0, 0), fatten(0, 0, 0, 0), next(NULL_NODE),
+      parent(NULL_NODE), left(NULL_NODE), right(NULL_NODE){};
 
 bool Node::is_leaf() const { return left == NULL_NODE; }
 
@@ -41,8 +41,9 @@ Tree::Tree(float margin, unsigned int init_cap)
   empty_node = 0;
 }
 
-unsigned int Tree::add(const AABB &aabb) {
+unsigned int Tree::add(entt::entity id, const AABB &aabb) {
   auto node = alloc_node();
+  nodes[node].id = id;
   nodes[node].aabb = aabb;
   update_node(node, margin);
   if (root == NULL_NODE) {
@@ -68,26 +69,16 @@ void Tree::update() {
         update_node(node, margin);
         insert_node(node, root);
       }
-      for (auto &node : invalid_nodes) {
-        std::vector<unsigned int> overlaps = query(node);
-        if (!overlaps.empty()) {
-          std::cout << "Node " << node << " overlaps with the following nodes:";
-          for (auto &o : overlaps) {
-            std::cout << " " << o << ",";
-          }
-          std::cout << std::endl;
-        }
-      }
     }
   }
 }
 
-std::vector<unsigned int> Tree::query(unsigned int node) const {
+std::vector<entt::entity> Tree::query(unsigned int node) const {
   std::vector<unsigned int> stack;
   stack.reserve(256);
   stack.push_back(root);
 
-  std::vector<unsigned int> result;
+  std::vector<entt::entity> result;
 
   while (stack.size()) {
     auto current = stack.back();
@@ -102,7 +93,7 @@ std::vector<unsigned int> Tree::query(unsigned int node) const {
       if (nodes[current].is_leaf()) {
         // Can't interact with itself.
         if (current != node) {
-          result.push_back(current);
+          result.push_back(nodes[current].id);
         }
       } else {
         stack.push_back(nodes[current].right);
@@ -190,7 +181,7 @@ std::vector<std::pair<unsigned int, unsigned int>> Tree::overlaps() const {
   return result;
 }
 
-//Unfinished
+// Unfinished
 void Tree::get_overlaps(
     unsigned int n0, unsigned int n1,
     std::vector<std::pair<unsigned int, unsigned int>> &result,

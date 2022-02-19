@@ -30,7 +30,11 @@ struct velocity {
   float dy;
 };
 
-using body = unsigned int;
+struct body {
+  unsigned int node;
+  int weight;
+  bool moved;
+};
 
 using focus = bool;
 
