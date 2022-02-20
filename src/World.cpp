@@ -51,7 +51,6 @@ void World::load_tiles(int layer, const std::string &path) {
               tree.add(entity, aabb::AABB{upscale(x), upscale(y),
                                           upscale(x + 1), upscale(y + 1)}),
               1, true);
-          registry.emplace<velocity>(entity, .0f, .0f);
           registry.emplace<sprite>(
               entity, SDL_Rect{16, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -93,7 +92,6 @@ void World::load_tiles(int layer, const std::string &path) {
               tree.add(entity, aabb::AABB{upscale(x), upscale(y),
                                           upscale(x + 1), upscale(y + 1)}),
               0, true);
-          registry.emplace<velocity>(entity, .0f, .0f);
           registry.emplace<sprite>(
               entity, SDL_Rect{64, 0, upscale(1), upscale(1)}, layer);
           break;
