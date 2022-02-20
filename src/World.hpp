@@ -38,12 +38,17 @@ struct body {
 
 using focus = bool;
 
+struct sprite {
+  SDL_Rect tile;
+  int layer;
+};
+
 class World {
 public:
   int width, height;
   bool updated;
 
-  World(const std::string &path);
+  World(const std::initializer_list<std::string> &paths);
   ~World(){};
 
   void update(Render &render);
@@ -51,8 +56,9 @@ public:
 private:
   entt::registry registry;
   aabb::Tree tree;
+  int layers;
 
-  void load_tiles(SDL_Surface *image);
+  void load_tiles(int layer, const std::string &path);
   void handle_input();
   void move_entities();
   void detect_collistions();

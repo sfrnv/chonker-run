@@ -11,102 +11,105 @@ Uint32 get_pixel32(SDL_Surface *surface, int x, int y) {
 
 inline auto upscale(int a) { return a << SCALING_FACTOR; }
 
-World::World(const std::string &path)
-    : width{0}, height{0}, updated{false}, tree{1.0f, 256} {
+World::World(const std::initializer_list<std::string> &paths)
+    : width{0}, height{0}, updated{false}, layers{0}, tree{1.0f, 256} {
+  for (auto const &i : paths)
+    load_tiles(layers++, i);
+  // Temporary entity with camera focus:
+  const auto entity = registry.create();
+  registry.emplace<position>(entity, .0f, .0f);
+  registry.emplace<body>(entity,
+                         tree.add(entity, aabb::AABB{upscale(0), upscale(0),
+                                                     upscale(1), upscale(1)}),
+                         0, true);
+  registry.emplace<velocity>(entity, .0f, .0f);
+  registry.emplace<focus>(entity, true);
+  registry.emplace<sprite>(entity,
+                           SDL_Rect{
+                               16,
+                               224,
+                               upscale(1),
+                               upscale(1),
+                           },
+                           1);
+}
+
+void World::load_tiles(int layer, const std::string &path) {
   if (SDL_Surface *image = IMG_Load(path.c_str())) {
     width = upscale(image->w);
     height = upscale(image->h);
-    // Temporary entity with camera focus:
-    const auto entity = registry.create();
-    registry.emplace<position>(entity, .0f, .0f);
-    registry.emplace<body>(entity,
-                           tree.add(entity, aabb::AABB{upscale(0), upscale(0),
-                                                       upscale(1), upscale(1)}),
-                           0, true);
-    registry.emplace<velocity>(entity, .0f, .0f);
-    registry.emplace<focus>(entity, true);
-    registry.emplace<SDL_Rect>(entity, SDL_Rect{
-                                           16,
-                                           224,
-                                           upscale(1),
-                                           upscale(1),
-                                       });
-    load_tiles(image);
-  }
-}
-
-void World::load_tiles(SDL_Surface *image) {
-  for (auto y = 0; y < image->w; ++y) {
-    for (auto x = 0; x < image->h; ++x) {
-      switch (get_pixel32(image, x, y)) {
-      case STONE_PIXEL: // stone
-      {
-        const auto entity = registry.create();
-        registry.emplace<position>(entity, (float)upscale(x),
-                                   (float)upscale(y));
-        registry.emplace<body>(
-            entity,
-            tree.add(entity, aabb::AABB{upscale(x), upscale(y), upscale(x + 1),
-                                        upscale(y + 1)}),
-            1, true);
-        registry.emplace<velocity>(entity, .0f, .0f);
-        registry.emplace<SDL_Rect>(entity,
-                                   SDL_Rect{16, 0, upscale(1), upscale(1)});
-        break;
-      }
-      case GRASS_PIXEL: // grass
-      {
-        const auto entity = registry.create();
-        registry.emplace<position>(entity, (float)upscale(x),
-                                   (float)upscale(y));
-        registry.emplace<SDL_Rect>(entity,
-                                   SDL_Rect{32, 0, upscale(1), upscale(1)});
-        break;
-      }
-      case WATER_PIXEL: // water
-      {
-        const auto entity = registry.create();
-        registry.emplace<position>(entity, (float)upscale(x),
-                                   (float)upscale(y));
-        registry.emplace<SDL_Rect>(entity,
-                                   SDL_Rect{0, 32, upscale(1), upscale(1)});
-        break;
-      }
-      case SAND_PIXEL: // sand
-      {
-        const auto entity = registry.create();
-        registry.emplace<position>(entity, (float)upscale(x),
-                                   (float)upscale(y));
-        registry.emplace<SDL_Rect>(entity,
-                                   SDL_Rect{48, 0, upscale(1), upscale(1)});
-        break;
-      }
-      case BRICK_PIXEL: // brick
-      {
-        const auto entity = registry.create();
-        registry.emplace<position>(entity, (float)upscale(x),
-                                   (float)upscale(y));
-        registry.emplace<body>(
-            entity,
-            tree.add(entity, aabb::AABB{upscale(x), upscale(y), upscale(x + 1),
-                                        upscale(y + 1)}),
-            0, true);
-        registry.emplace<velocity>(entity, .0f, .0f);
-        registry.emplace<SDL_Rect>(entity,
-                                   SDL_Rect{64, 0, upscale(1), upscale(1)});
-        break;
-      }
-      case LAVA_PIXEL: // lava
-      {
-        const auto entity = registry.create();
-        registry.emplace<position>(entity, (float)upscale(x),
-                                   (float)upscale(y));
-        registry.emplace<SDL_Rect>(entity,
-                                   SDL_Rect{0, 48, upscale(1), upscale(1)});
-        break;
-      }
-      default: // void
-        break;
+    for (auto y = 0; y < image->w; ++y) {
+      for (auto x = 0; x < image->h; ++x) {
+        switch (get_pixel32(image, x, y)) {
+        case STONE_PIXEL: // stone
+        {
+          const auto entity = registry.create();
+          registry.emplace<position>(entity, (float)upscale(x),
+                                     (float)upscale(y));
+          registry.emplace<body>(
+              entity,
+              tree.add(entity, aabb::AABB{upscale(x), upscale(y),
+                                          upscale(x + 1), upscale(y + 1)}),
+              1, true);
+          registry.emplace<velocity>(entity, .0f, .0f);
+          registry.emplace<sprite>(
+              entity, SDL_Rect{16, 0, upscale(1), upscale(1)}, layer);
+          break;
+        }
+        case GRASS_PIXEL: // grass
+        {
+          const auto entity = registry.create();
+          registry.emplace<position>(entity, (float)upscale(x),
+                                     (float)upscale(y));
+          registry.emplace<sprite>(
+              entity, SDL_Rect{32, 0, upscale(1), upscale(1)}, layer);
+          break;
+        }
+        case WATER_PIXEL: // water
+        {
+          const auto entity = registry.create();
+          registry.emplace<position>(entity, (float)upscale(x),
+                                     (float)upscale(y));
+          registry.emplace<sprite>(
+              entity, SDL_Rect{0, 32, upscale(1), upscale(1)}, layer);
+          break;
+        }
+        case SAND_PIXEL: // sand
+        {
+          const auto entity = registry.create();
+          registry.emplace<position>(entity, (float)upscale(x),
+                                     (float)upscale(y));
+          registry.emplace<sprite>(
+              entity, SDL_Rect{48, 0, upscale(1), upscale(1)}, layer);
+          break;
+        }
+        case BRICK_PIXEL: // brick
+        {
+          const auto entity = registry.create();
+          registry.emplace<position>(entity, (float)upscale(x),
+                                     (float)upscale(y));
+          registry.emplace<body>(
+              entity,
+              tree.add(entity, aabb::AABB{upscale(x), upscale(y),
+                                          upscale(x + 1), upscale(y + 1)}),
+              0, true);
+          registry.emplace<velocity>(entity, .0f, .0f);
+          registry.emplace<sprite>(
+              entity, SDL_Rect{64, 0, upscale(1), upscale(1)}, layer);
+          break;
+        }
+        case LAVA_PIXEL: // lava
+        {
+          const auto entity = registry.create();
+          registry.emplace<position>(entity, (float)upscale(x),
+                                     (float)upscale(y));
+          registry.emplace<sprite>(
+              entity, SDL_Rect{0, 48, upscale(1), upscale(1)}, layer);
+          break;
+        }
+        default: // void
+          break;
+        }
       }
     }
   }
@@ -214,11 +217,11 @@ void World::detect_collistions() {
                     tree[b.node].aabb);
           } else if (b.weight < view.get<body>(o).weight) {
             correct(p, tree[b.node].aabb, tree[view.get<body>(o).node].aabb);
-          view.get<body>(o).moved = true;
+            view.get<body>(o).moved = true;
           } else {
             correct(p, view.get<position>(o), tree[b.node].aabb,
                     tree[view.get<body>(o).node].aabb);
-          view.get<body>(o).moved = true;
+            view.get<body>(o).moved = true;
           }
         }
       }
@@ -308,9 +311,12 @@ void World::focus_camera(Render &render) {
 }
 
 void World::render_entities(Render &render) {
-  auto view = registry.view<position, SDL_Rect>();
-  view.each([&](auto &pos, auto &tile) {
-    render.update(SDL_Rect{(int)pos.x, (int)pos.y, upscale(1), upscale(1)},
-                  tile);
-  });
+  auto view = registry.view<position, sprite>();
+  for (auto layer = 0; layer < layers; ++layer) {
+    view.each([&](auto &pos, auto &spr) {
+      if (spr.layer == layer)
+        render.update(SDL_Rect{(int)pos.x, (int)pos.y, upscale(1), upscale(1)},
+                      spr.tile);
+    });
+  }
 }
