@@ -18,6 +18,7 @@ constexpr auto GRASS_PIXEL = 0xFF00FF00;
 constexpr auto WATER_PIXEL = 0xFFFF0000;
 constexpr auto SAND_PIXEL = 0xFF00FFFF;
 constexpr auto BRICK_PIXEL = 0xFF0000FF;
+constexpr auto CRATE_PIXEL = 0xFF004F7D;
 constexpr auto LAVA_PIXEL = 0xFF00AAFF;
 
 struct position {
