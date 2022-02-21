@@ -58,6 +58,7 @@ private:
   entt::registry registry;
   aabb::Tree tree;
   int layers;
+  bool show_tree;
 
   void load_tiles(int layer, const std::string &path);
   void handle_input();
@@ -65,4 +66,5 @@ private:
   void detect_collistions();
   void focus_camera(Render &render);
   void render_entities(Render &render);
+  void render_tree(Render &render);
 };

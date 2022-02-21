@@ -64,3 +64,20 @@ void Render::update(const SDL_Rect &pos, const SDL_Rect &tile,
 void Render::update(const SDL_Rect &pos, const SDL_Rect &tile) {
   update(pos, tile, texture);
 }
+
+void Render::draw_frame(int x1, int y1, int x2, int y2, unsigned int color) {
+  SDL_Rect pos{x1, y1, x2 - x1, y2 - y1};
+  if (SDL_HasIntersection(&viewport, &pos)) {
+    SDL_SetRenderDrawColor(renderer, color & 0xFF, (color >> 8) & 0xFF,
+                           (color >> 16) & 0xFF, (color >> 24) & 0xFF);
+    SDL_RenderDrawLine(renderer, x1 - viewport.x, y1 - viewport.y,
+                       x1 - viewport.x, y2 - viewport.y);
+    SDL_RenderDrawLine(renderer, x1 - viewport.x, y1 - viewport.y,
+                       x2 - viewport.x, y1 - viewport.y);
+    SDL_RenderDrawLine(renderer, x1 - viewport.x, y2 - viewport.y,
+                       x2 - viewport.x, y2 - viewport.y);
+    SDL_RenderDrawLine(renderer, x2 - viewport.x, y1 - viewport.y,
+                       x2 - viewport.x, y2 - viewport.y);
+    updated = true;
+  }
+}

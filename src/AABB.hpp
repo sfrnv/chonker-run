@@ -42,6 +42,7 @@ struct Node {
   void update_AABB(float margin);
 };
 
+// TODO: add iteration support
 class Tree {
 public:
   Tree(float margin, unsigned int capacity);
@@ -51,6 +52,7 @@ public:
   void remove(unsigned int node);
   void update();
   void print();
+  inline unsigned int size() { return count; };
   std::vector<entt::entity> query(unsigned int node) const;
   std::vector<std::pair<unsigned int, unsigned int>> overlaps() const;
   // ColliderPairList &ComputePairs();

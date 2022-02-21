@@ -133,6 +133,8 @@ void World::update(Render &render) {
   detect_collistions();
   focus_camera(render);
   render_entities(render);
+  if (show_tree)
+    render_tree(render);
 }
 
 void World::handle_input() {
@@ -188,6 +190,9 @@ void World::handle_input() {
         case SDLK_DOWN:
           if (vel.dy > .0f)
             vel.dy = .0f;
+          break;
+        case SDLK_t:
+          show_tree = !show_tree;
           break;
         default:
           break;
@@ -330,5 +335,17 @@ void World::render_entities(Render &render) {
         render.update(SDL_Rect{(int)pos.x, (int)pos.y, upscale(1), upscale(1)},
                       spr.tile);
     });
+  }
+}
+
+void World::render_tree(Render &render) {
+  for (auto i = 0; i < tree.size(); ++i) {
+    if (tree[i].is_leaf()) {
+      render.draw_frame(tree[i].aabb.x1, tree[i].aabb.y1, tree[i].aabb.x2,
+                        tree[i].aabb.y2, 0xFF00FF00);
+    } else {
+      render.draw_frame(tree[i].fatten.x1, tree[i].fatten.y1, tree[i].fatten.x2,
+                        tree[i].fatten.y2, 0xFF0000FF);
+    }
   }
 }
