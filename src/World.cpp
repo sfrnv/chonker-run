@@ -9,6 +9,7 @@ Uint32 get_pixel32(SDL_Surface *surface, int x, int y) {
   return pixels[(y * surface->w) + x];
 }
 
+// TODO: replace with template
 inline auto upscale(int a) { return a << SCALING_FACTOR; }
 
 World::World(const std::initializer_list<std::string> &paths)
@@ -18,11 +19,13 @@ World::World(const std::initializer_list<std::string> &paths)
   // Temporary entity with camera focus:
   const auto entity = registry.create();
   registry.emplace<position>(entity, .0f, .0f);
-  registry.emplace<body>(entity,
-                         tree.add(entity, aabb::AABB{upscale(0), upscale(0),
-                                                     upscale(1), upscale(1)}),
-                         0, true);
-  registry.emplace<velocity>(entity, .0f, .0f);
+  registry.emplace<body>(
+      entity,
+      tree.add(entity, aabb::AABB{(float)upscale(0), (float)upscale(0),
+                                  (float)upscale(1), (float)upscale(1)}),
+      0, true);
+  registry.emplace<velocity>(entity, .0f, .0f, 1.0f);
+  registry.emplace<acceleration>(entity, .0f, .0f);
   registry.emplace<focus>(entity, true);
   registry.emplace<sprite>(entity,
                            SDL_Rect{
@@ -48,8 +51,9 @@ void World::load_tiles(int layer, const std::string &path) {
                                      (float)upscale(y));
           registry.emplace<body>(
               entity,
-              tree.add(entity, aabb::AABB{upscale(x), upscale(y),
-                                          upscale(x + 1), upscale(y + 1)}),
+              tree.add(entity, aabb::AABB{(float)upscale(x), (float)upscale(y),
+                                          (float)upscale(x + 1),
+                                          (float)upscale(y + 1)}),
               1, true);
           registry.emplace<sprite>(
               entity, SDL_Rect{16, 0, upscale(1), upscale(1)}, layer);
@@ -89,8 +93,9 @@ void World::load_tiles(int layer, const std::string &path) {
                                      (float)upscale(y));
           registry.emplace<body>(
               entity,
-              tree.add(entity, aabb::AABB{upscale(x), upscale(y),
-                                          upscale(x + 1), upscale(y + 1)}),
+              tree.add(entity, aabb::AABB{(float)upscale(x), (float)upscale(y),
+                                          (float)upscale(x + 1),
+                                          (float)upscale(y + 1)}),
               1, true);
           registry.emplace<sprite>(
               entity, SDL_Rect{64, 0, upscale(1), upscale(1)}, layer);
@@ -103,8 +108,9 @@ void World::load_tiles(int layer, const std::string &path) {
                                      (float)upscale(y));
           registry.emplace<body>(
               entity,
-              tree.add(entity, aabb::AABB{upscale(x), upscale(y),
-                                          upscale(x + 1), upscale(y + 1)}),
+              tree.add(entity, aabb::AABB{(float)upscale(x), (float)upscale(y),
+                                          (float)upscale(x + 1),
+                                          (float)upscale(y + 1)}),
               0, true);
           registry.emplace<sprite>(
               entity, SDL_Rect{80, 0, upscale(1), upscale(1)}, layer);
@@ -129,6 +135,7 @@ void World::load_tiles(int layer, const std::string &path) {
 
 void World::update(Render &render) {
   handle_input();
+  accelerate_entities();
   move_entities();
   detect_collistions();
   focus_camera(render);
@@ -138,9 +145,9 @@ void World::update(Render &render) {
 }
 
 void World::handle_input() {
-  auto view = registry.view<velocity, focus>();
+  auto view = registry.view<acceleration, focus>();
   SDL_Event event;
-  view.each([&](auto &vel, auto &focus) {
+  view.each([&](auto &acc, auto &focus) {
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_KEYDOWN, SDL_KEYUP) >
            0) {
       switch (event.type) {
@@ -148,19 +155,19 @@ void World::handle_input() {
         switch (event.key.keysym.sym) {
         case SDLK_a:
         case SDLK_LEFT:
-          vel.dx = -1.0f;
+          acc.dx = -1.0f;
           break;
         case SDLK_d:
         case SDLK_RIGHT:
-          vel.dx = 1.0f;
+          acc.dx = 1.0f;
           break;
         case SDLK_w:
         case SDLK_UP:
-          vel.dy = -1.0f;
+          acc.dy = -1.0f;
           break;
         case SDLK_s:
         case SDLK_DOWN:
-          vel.dy = 1.0f;
+          acc.dy = 1.0f;
           break;
         case SDLK_p:
           tree.print();
@@ -173,23 +180,23 @@ void World::handle_input() {
         switch (event.key.keysym.sym) {
         case SDLK_a:
         case SDLK_LEFT:
-          if (vel.dx < .0f)
-            vel.dx = .0f;
+          if (acc.dx < .0f)
+            acc.dx = .0f;
           break;
         case SDLK_d:
         case SDLK_RIGHT:
-          if (vel.dx > .0f)
-            vel.dx = .0f;
+          if (acc.dx > .0f)
+            acc.dx = .0f;
           break;
         case SDLK_w:
         case SDLK_UP:
-          if (vel.dy < .0f)
-            vel.dy = .0f;
+          if (acc.dy < .0f)
+            acc.dy = .0f;
           break;
         case SDLK_s:
         case SDLK_DOWN:
-          if (vel.dy > .0f)
-            vel.dy = .0f;
+          if (acc.dy > .0f)
+            acc.dy = .0f;
           break;
         case SDLK_t:
           show_tree = !show_tree;
@@ -202,6 +209,14 @@ void World::handle_input() {
         break;
       }
     }
+  });
+}
+
+void World::accelerate_entities() {
+  auto view = registry.view<velocity, acceleration>();
+  view.each([&](auto &vel, auto &acc) {
+    vel.dx = std::clamp(vel.dx + acc.dx - (vel.dx / 10), -vel.max, vel.max);
+    vel.dy = std::clamp(vel.dy + acc.dy - (vel.dy / 10), -vel.max, vel.max);
   });
 }
 
@@ -320,8 +335,9 @@ void World::render_entities(Render &render) {
   for (auto layer = 0; layer < layers; ++layer) {
     view.each([&](auto &pos, auto &spr) {
       if (spr.layer == layer)
-        render.update(SDL_Rect{(int)pos.x, (int)pos.y, upscale(1), upscale(1)},
-                      spr.tile);
+        render.update(
+            SDL_FRect{pos.x, pos.y, (float)upscale(1), (float)upscale(1)},
+            spr.tile);
     });
   }
 }

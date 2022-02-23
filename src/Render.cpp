@@ -31,7 +31,7 @@ Render::Render(int width, int height, const std::string &title,
       throw std::runtime_error(SDL_GetError());
     }
   }
-  viewport = SDL_Rect{0, 0, width, height};
+  viewport = SDL_FRect{.0f, .0f, (float)width, (float)height};
 }
 
 Render::~Render() {
@@ -52,22 +52,26 @@ void Render::set_title(const std::string &text) {
   SDL_SetWindowTitle(window, text.c_str());
 }
 
-void Render::update(const SDL_Rect &pos, const SDL_Rect &tile,
+void Render::update(const SDL_FRect &pos, const SDL_Rect &tile,
                     SDL_Texture *texture) {
-  if (SDL_HasIntersection(&viewport, &pos)) {
-    SDL_Rect result{pos.x - viewport.x, pos.y - viewport.y, pos.w, pos.h};
-    SDL_RenderCopy(renderer, texture, &tile, &result);
+  // if (SDL_HasIntersection(&viewport, &pos)) {
+  if (!(pos.x >= viewport.x + viewport.w || pos.y >= viewport.y + viewport.h ||
+        pos.x + pos.w <= viewport.x || pos.y + pos.h <= viewport.y)) {
+    SDL_FRect result{pos.x - viewport.x, pos.y - viewport.y, pos.w, pos.h};
+    SDL_RenderCopyF(renderer, texture, &tile, &result);
     updated = true;
   }
 }
 
-void Render::update(const SDL_Rect &pos, const SDL_Rect &tile) {
+void Render::update(const SDL_FRect &pos, const SDL_Rect &tile) {
   update(pos, tile, texture);
 }
 
 void Render::draw_frame(int x1, int y1, int x2, int y2, unsigned int color) {
   SDL_Rect pos{x1, y1, x2 - x1, y2 - y1};
-  if (SDL_HasIntersection(&viewport, &pos)) {
+  // if (SDL_HasIntersection(&viewport, &pos)) {
+  if (!(pos.x >= viewport.x + viewport.w || pos.y >= viewport.y + viewport.h ||
+        pos.x + pos.w <= viewport.x || pos.y + pos.h <= viewport.y)) {
     SDL_SetRenderDrawColor(renderer, color & 0xFF, (color >> 8) & 0xFF,
                            (color >> 16) & 0xFF, (color >> 24) & 0xFF);
     SDL_RenderDrawLine(renderer, x1 - viewport.x, y1 - viewport.y,

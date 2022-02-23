@@ -6,7 +6,8 @@
 
 namespace aabb {
 
-AABB::AABB(int x1, int y1, int x2, int y2) : x1(x1), y1(y1), x2(x2), y2(y2){};
+AABB::AABB(float x1, float y1, float x2, float y2)
+    : x1(x1), y1(y1), x2(x2), y2(y2){};
 
 AABB AABB::unite(const AABB &aabb) const {
   return AABB(std::min(x1, aabb.x1), std::min(y1, aabb.y1),
