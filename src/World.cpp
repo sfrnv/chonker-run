@@ -23,9 +23,10 @@ World::World(const std::initializer_list<std::string> &paths)
       entity,
       tree.add(entity, aabb::AABB{(float)upscale(0), (float)upscale(0),
                                   (float)upscale(1), (float)upscale(1)}),
-      0, true);
+      10.0f, true);
   registry.emplace<velocity>(entity, .0f, .0f, 1.0f);
   registry.emplace<acceleration>(entity, .0f, .0f);
+  registry.emplace<force>(entity, .0f, .0f);
   registry.emplace<focus>(entity, true);
   registry.emplace<sprite>(entity,
                            SDL_Rect{
@@ -54,7 +55,7 @@ void World::load_tiles(int layer, const std::string &path) {
               tree.add(entity, aabb::AABB{(float)upscale(x), (float)upscale(y),
                                           (float)upscale(x + 1),
                                           (float)upscale(y + 1)}),
-              1, true);
+              30.0f, true);
           registry.emplace<sprite>(
               entity, SDL_Rect{16, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -96,7 +97,7 @@ void World::load_tiles(int layer, const std::string &path) {
               tree.add(entity, aabb::AABB{(float)upscale(x), (float)upscale(y),
                                           (float)upscale(x + 1),
                                           (float)upscale(y + 1)}),
-              1, true);
+              20.0f, true);
           registry.emplace<sprite>(
               entity, SDL_Rect{64, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -111,7 +112,7 @@ void World::load_tiles(int layer, const std::string &path) {
               tree.add(entity, aabb::AABB{(float)upscale(x), (float)upscale(y),
                                           (float)upscale(x + 1),
                                           (float)upscale(y + 1)}),
-              0, true);
+              10.0f, true);
           registry.emplace<sprite>(
               entity, SDL_Rect{80, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -135,8 +136,9 @@ void World::load_tiles(int layer, const std::string &path) {
 
 void World::update(Render &render) {
   handle_input();
-  accelerate_entities();
-  move_entities();
+  calc_acceleration();
+  calc_velocity();
+  calc_position();
   detect_collistions();
   focus_camera(render);
   render_entities(render);
@@ -145,9 +147,9 @@ void World::update(Render &render) {
 }
 
 void World::handle_input() {
-  auto view = registry.view<acceleration, focus>();
+  auto view = registry.view<force, focus>();
   SDL_Event event;
-  view.each([&](auto &acc, auto &focus) {
+  view.each([&](auto &force, auto &focus) {
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_KEYDOWN, SDL_KEYUP) >
            0) {
       switch (event.type) {
@@ -155,19 +157,19 @@ void World::handle_input() {
         switch (event.key.keysym.sym) {
         case SDLK_a:
         case SDLK_LEFT:
-          acc.dx = -1.0f;
+          force.dx = -1.0f;
           break;
         case SDLK_d:
         case SDLK_RIGHT:
-          acc.dx = 1.0f;
+          force.dx = 1.0f;
           break;
         case SDLK_w:
         case SDLK_UP:
-          acc.dy = -1.0f;
+          force.dy = -1.0f;
           break;
         case SDLK_s:
         case SDLK_DOWN:
-          acc.dy = 1.0f;
+          force.dy = 1.0f;
           break;
         case SDLK_p:
           tree.print();
@@ -180,23 +182,23 @@ void World::handle_input() {
         switch (event.key.keysym.sym) {
         case SDLK_a:
         case SDLK_LEFT:
-          if (acc.dx < .0f)
-            acc.dx = .0f;
+          if (force.dx < .0f)
+            force.dx = .0f;
           break;
         case SDLK_d:
         case SDLK_RIGHT:
-          if (acc.dx > .0f)
-            acc.dx = .0f;
+          if (force.dx > .0f)
+            force.dx = .0f;
           break;
         case SDLK_w:
         case SDLK_UP:
-          if (acc.dy < .0f)
-            acc.dy = .0f;
+          if (force.dy < .0f)
+            force.dy = .0f;
           break;
         case SDLK_s:
         case SDLK_DOWN:
-          if (acc.dy > .0f)
-            acc.dy = .0f;
+          if (force.dy > .0f)
+            force.dy = .0f;
           break;
         case SDLK_t:
           show_tree = !show_tree;
@@ -212,15 +214,23 @@ void World::handle_input() {
   });
 }
 
-void World::accelerate_entities() {
-  auto view = registry.view<velocity, acceleration>();
-  view.each([&](auto &vel, auto &acc) {
-    vel.dx = std::clamp(vel.dx + acc.dx - (vel.dx / 10), -vel.max, vel.max);
-    vel.dy = std::clamp(vel.dy + acc.dy - (vel.dy / 10), -vel.max, vel.max);
+void World::calc_acceleration() {
+  auto view = registry.view<body, acceleration, force>();
+  view.each([&](auto &body, auto &acc, auto &force) {
+    acc.dx = force.dx / body.mass;
+    acc.dy = force.dy / body.mass;
   });
 }
 
-void World::move_entities() {
+void World::calc_velocity() {
+  auto view = registry.view<velocity, acceleration>();
+  view.each([&](auto &vel, auto &acc) {
+    vel.dx += acc.dx - (vel.dx / 10); // TODO: remove slowdown
+    vel.dy += acc.dy - (vel.dy / 10); // TODO: remove slowdown
+  });
+}
+
+void World::calc_position() {
   auto view = registry.view<position, velocity, body>();
   view.each([&](auto &pos, auto &vel, auto &body) {
     pos.x += vel.dx;

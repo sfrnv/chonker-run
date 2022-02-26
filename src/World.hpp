@@ -29,7 +29,6 @@ struct position {
 struct velocity {
   float dx;
   float dy;
-  float max;
 };
 
 struct acceleration {
@@ -37,9 +36,14 @@ struct acceleration {
   float dy;
 };
 
+struct force {
+  float dx;
+  float dy;
+};
+
 struct body {
   unsigned int node;
-  int mass;
+  float mass; // TODO: replace with inversed mass (1 / mass)
   bool moved;
 };
 
@@ -68,8 +72,9 @@ private:
 
   void load_tiles(int layer, const std::string &path);
   void handle_input();
-  void accelerate_entities();
-  void move_entities();
+  void calc_acceleration();
+  void calc_velocity();
+  void calc_position();
   void detect_collistions();
   void focus_camera(Render &render);
   void render_entities(Render &render);
