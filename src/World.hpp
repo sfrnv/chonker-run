@@ -21,6 +21,7 @@ constexpr auto BRICK_PIXEL = 0xFF0000FF;
 constexpr auto CRATE_PIXEL = 0xFF004F7D;
 constexpr auto LAVA_PIXEL = 0xFF00AAFF;
 
+// TODO: replace with transform
 struct position {
   float x;
   float y;
@@ -43,7 +44,7 @@ struct force {
 
 struct body {
   unsigned int node;
-  float mass; // TODO: replace with inversed mass (1 / mass)
+  float inverse_mass; // Inverse mass
   bool moved;
 };
 

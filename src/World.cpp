@@ -1,5 +1,6 @@
 #include "World.hpp"
 #include <cmath>
+#include <iostream>
 
 Uint32 get_pixel32(SDL_Surface *surface, int x, int y) {
   // Convert the pixels to 32 bit
@@ -23,8 +24,8 @@ World::World(const std::initializer_list<std::string> &paths)
       entity,
       tree.add(entity, aabb::AABB{(float)upscale(0), (float)upscale(0),
                                   (float)upscale(1), (float)upscale(1)}),
-      10.0f, true);
-  registry.emplace<velocity>(entity, .0f, .0f, 1.0f);
+      .1f, true);
+  registry.emplace<velocity>(entity, .0f, .0f);
   registry.emplace<acceleration>(entity, .0f, .0f);
   registry.emplace<force>(entity, .0f, .0f);
   registry.emplace<focus>(entity, true);
@@ -55,7 +56,10 @@ void World::load_tiles(int layer, const std::string &path) {
               tree.add(entity, aabb::AABB{(float)upscale(x), (float)upscale(y),
                                           (float)upscale(x + 1),
                                           (float)upscale(y + 1)}),
-              30.0f, true);
+              .0f, true);
+          registry.emplace<velocity>(entity, .0f, .0f);
+          registry.emplace<acceleration>(entity, .0f, .0f);
+          registry.emplace<force>(entity, .0f, .0f);
           registry.emplace<sprite>(
               entity, SDL_Rect{16, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -97,7 +101,10 @@ void World::load_tiles(int layer, const std::string &path) {
               tree.add(entity, aabb::AABB{(float)upscale(x), (float)upscale(y),
                                           (float)upscale(x + 1),
                                           (float)upscale(y + 1)}),
-              20.0f, true);
+              .0f, true);
+          registry.emplace<velocity>(entity, .0f, .0f);
+          registry.emplace<acceleration>(entity, .0f, .0f);
+          registry.emplace<force>(entity, .0f, .0f);
           registry.emplace<sprite>(
               entity, SDL_Rect{64, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -112,7 +119,10 @@ void World::load_tiles(int layer, const std::string &path) {
               tree.add(entity, aabb::AABB{(float)upscale(x), (float)upscale(y),
                                           (float)upscale(x + 1),
                                           (float)upscale(y + 1)}),
-              10.0f, true);
+              .02f, true);
+          registry.emplace<velocity>(entity, .0f, .0f);
+          registry.emplace<acceleration>(entity, .0f, .0f);
+          registry.emplace<force>(entity, .0f, .0f);
           registry.emplace<sprite>(
               entity, SDL_Rect{80, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -217,16 +227,22 @@ void World::handle_input() {
 void World::calc_acceleration() {
   auto view = registry.view<body, acceleration, force>();
   view.each([&](auto &body, auto &acc, auto &force) {
-    acc.dx = force.dx / body.mass;
-    acc.dy = force.dy / body.mass;
+    acc.dx = force.dx * body.inverse_mass;
+    acc.dy = force.dy * body.inverse_mass;
   });
 }
 
 void World::calc_velocity() {
   auto view = registry.view<velocity, acceleration>();
   view.each([&](auto &vel, auto &acc) {
-    vel.dx += acc.dx - (vel.dx / 10); // TODO: remove slowdown
-    vel.dy += acc.dy - (vel.dy / 10); // TODO: remove slowdown
+    if (std::abs(vel.dx) < 0.001f)
+      vel.dx = acc.dx;
+    else
+      vel.dx += acc.dx - (vel.dx / 10); // TODO: remove slowdown
+    if (std::abs(vel.dy) < 0.001f)
+      vel.dy = acc.dy;
+    else
+      vel.dy += acc.dy - (vel.dy / 10); // TODO: remove slowdown
   });
 }
 
@@ -246,8 +262,8 @@ void World::calc_position() {
 
 void World::detect_collistions() {
   tree.update();
-  auto view = registry.view<position, body>();
-  view.each([&](auto &p, auto &b) {
+  auto view = registry.view<position, velocity, body>();
+  view.each([&](auto &p, auto &v, auto &b) {
     if (b.moved) {
       std::vector<entt::entity> collisions = tree.query(b.node);
       if (collisions.empty()) {
@@ -255,23 +271,47 @@ void World::detect_collistions() {
       } else {
         for (auto &o : collisions) {
           auto &p1 = view.get<position>(o);
+          auto &v1 = view.get<velocity>(o);
           auto &b1 = view.get<body>(o);
-          if (b.mass > b1.mass) {
-            correct(p1, tree[b1.node].aabb, tree[b.node].aabb);
-            b1.moved = true;
-          } else if (b.mass < b1.mass) {
-            correct(p, tree[b.node].aabb, tree[b1.node].aabb);
+          if (b.inverse_mass < b1.inverse_mass) {
+            projection_correct(p1, tree[b1.node].aabb, tree[b.node].aabb);
+          } else if (b.inverse_mass > b1.inverse_mass) {
+            projection_correct(p, tree[b.node].aabb, tree[b1.node].aabb);
           } else {
-            correct(p, p1, tree[b.node].aabb, tree[b1.node].aabb);
-            b1.moved = true;
+            projection_correct(p, p1, tree[b.node].aabb, tree[b1.node].aabb);
           }
+          if (b1.inverse_mass > 0)
+            impulse_correct(p, p1, tree[b.node].aabb, tree[b1.node].aabb, v, v1,
+                            b, b1);
         }
       }
     }
   });
 }
 
-void correct(position &p1, aabb::AABB &aabb1, aabb::AABB &aabb2) {
+void impulse_correct(const position &p1, const position &p2,
+                     const aabb::AABB &aabb1, const aabb::AABB &aabb2,
+                     velocity &v1, velocity &v2, body &b1, body &b2) {
+  auto center1_x = aabb1.x1 + (aabb1.x2 - aabb1.x1) / 2;
+  auto center1_y = aabb1.y1 + (aabb1.y2 - aabb1.y1) / 2;
+  auto center2_x = aabb2.x1 + (aabb2.x2 - aabb2.x1) / 2;
+  auto center2_y = aabb2.y1 + (aabb2.y2 - aabb2.y1) / 2;
+  auto nx = center1_x - center2_x;
+  auto ny = center1_y - center2_y;
+  auto length = std::sqrtf(std::powf(nx, 2) + std::powf(ny, 2));
+  nx /= length;
+  ny /= length;
+  velocity relative{v1.dx - v2.dx, v1.dy - v2.dy};
+  float e = 1.0f; // TODO replace it with body field
+  auto normilized = -(1 + e) * (nx * relative.dx + ny * relative.dy);
+  auto impulse = normilized / (b1.inverse_mass + b2.inverse_mass);
+  v1.dx += impulse * b1.inverse_mass * nx;
+  v1.dy += impulse * b1.inverse_mass * ny;
+  v2.dx -= impulse * b2.inverse_mass * nx;
+  v2.dy -= impulse * b2.inverse_mass * ny;
+}
+
+void projection_correct(position &p1, aabb::AABB &aabb1, aabb::AABB &aabb2) {
   auto center1_x = aabb1.x1 + (aabb1.x2 - aabb1.x1) / 2;
   auto center1_y = aabb1.y1 + (aabb1.y2 - aabb1.y1) / 2;
   auto center2_x = aabb2.x1 + (aabb2.x2 - aabb2.x1) / 2;
@@ -291,7 +331,8 @@ void correct(position &p1, aabb::AABB &aabb1, aabb::AABB &aabb2) {
   }
 }
 
-void correct(position &p1, position &p2, aabb::AABB &aabb1, aabb::AABB &aabb2) {
+void projection_correct(position &p1, position &p2, aabb::AABB &aabb1,
+                        aabb::AABB &aabb2) {
   auto center1_x = aabb1.x1 + (aabb1.x2 - aabb1.x1) / 2;
   auto center1_y = aabb1.y1 + (aabb1.y2 - aabb1.y1) / 2;
   auto center2_x = aabb2.x1 + (aabb2.x2 - aabb2.x1) / 2;
