@@ -39,7 +39,7 @@ struct acceleration {
 
 struct body {
   unsigned int node;
-  int weight;
+  int mass;
   bool moved;
 };
 

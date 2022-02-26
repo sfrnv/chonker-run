@@ -246,10 +246,10 @@ void World::detect_collistions() {
         for (auto &o : collisions) {
           auto &p1 = view.get<position>(o);
           auto &b1 = view.get<body>(o);
-          if (b.weight > b1.weight) {
+          if (b.mass > b1.mass) {
             correct(p1, tree[b1.node].aabb, tree[b.node].aabb);
             b1.moved = true;
-          } else if (b.weight < b1.weight) {
+          } else if (b.mass < b1.mass) {
             correct(p, tree[b.node].aabb, tree[b1.node].aabb);
           } else {
             correct(p, p1, tree[b.node].aabb, tree[b1.node].aabb);
