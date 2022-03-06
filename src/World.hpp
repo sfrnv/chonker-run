@@ -10,6 +10,7 @@
 #endif
 
 #include "AABB.hpp"
+#include "Geometry.hpp"
 
 constexpr auto SCALING_FACTOR = 4;
 
@@ -22,25 +23,13 @@ constexpr auto CRATE_PIXEL = 0xFF004F7D;
 constexpr auto LAVA_PIXEL = 0xFF00AAFF;
 
 // TODO: replace with transform
-struct position {
-  float x;
-  float y;
-};
+class position : public geom::Point<float> {};
 
-struct velocity {
-  float dx;
-  float dy;
-};
+class velocity : public geom::Vector<float> {};
 
-struct acceleration {
-  float dx;
-  float dy;
-};
+class acceleration : public geom::Vector<float> {};
 
-struct force {
-  float dx;
-  float dy;
-};
+class force : public geom::Vector<float> {};
 
 struct body {
   unsigned int node;
@@ -81,3 +70,11 @@ private:
   void render_entities(Render &render);
   void render_tree(Render &render);
 };
+
+void impulse_correct(const aabb::AABB &aabb1, const aabb::AABB &aabb2,
+                     velocity &v1, velocity &v2, body &b1, body &b2);
+
+void projection_correct(position &p1, aabb::AABB &aabb1, aabb::AABB &aabb2);
+
+void projection_correct(position &p1, position &p2, aabb::AABB &aabb1,
+                        aabb::AABB &aabb2);

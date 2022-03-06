@@ -19,15 +19,15 @@ World::World(const std::initializer_list<std::string> &paths)
     load_tiles(layers++, i);
   // Temporary entity with camera focus:
   const auto entity = registry.create();
-  registry.emplace<position>(entity, .0f, .0f);
+  registry.emplace<position>(entity, geom::Point{.0f, .0f});
   registry.emplace<body>(
       entity,
       tree.add(entity, aabb::AABB{(float)upscale(0), (float)upscale(0),
                                   (float)upscale(1), (float)upscale(1)}),
       .1f, true);
-  registry.emplace<velocity>(entity, .0f, .0f);
-  registry.emplace<acceleration>(entity, .0f, .0f);
-  registry.emplace<force>(entity, .0f, .0f);
+  registry.emplace<velocity>(entity, geom::Vector{.0f, .0f});
+  registry.emplace<acceleration>(entity, geom::Vector{.0f, .0f});
+  registry.emplace<force>(entity, geom::Vector{.0f, .0f});
   registry.emplace<focus>(entity, true);
   registry.emplace<sprite>(entity,
                            SDL_Rect{
@@ -45,21 +45,18 @@ void World::load_tiles(int layer, const std::string &path) {
     height = upscale(image->h);
     for (auto y = 0; y < image->w; ++y) {
       for (auto x = 0; x < image->h; ++x) {
+        auto pos1 = geom::Point{(float)upscale(x), (float)upscale(y)};
+        auto pos2 = geom::Point{(float)upscale(x + 1), (float)upscale(y + 1)};
         switch (get_pixel32(image, x, y)) {
         case STONE_PIXEL: // stone
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, (float)upscale(x),
-                                     (float)upscale(y));
+          registry.emplace<position>(entity, geom::Point{pos1});
           registry.emplace<body>(
-              entity,
-              tree.add(entity, aabb::AABB{(float)upscale(x), (float)upscale(y),
-                                          (float)upscale(x + 1),
-                                          (float)upscale(y + 1)}),
-              .0f, true);
-          registry.emplace<velocity>(entity, .0f, .0f);
-          registry.emplace<acceleration>(entity, .0f, .0f);
-          registry.emplace<force>(entity, .0f, .0f);
+              entity, tree.add(entity, aabb::AABB{pos1, pos2}), .0f, true);
+          registry.emplace<velocity>(entity, geom::Vector{.0f, .0f});
+          registry.emplace<acceleration>(entity, geom::Vector{.0f, .0f});
+          registry.emplace<force>(entity, geom::Vector{.0f, .0f});
           registry.emplace<sprite>(
               entity, SDL_Rect{16, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -67,8 +64,7 @@ void World::load_tiles(int layer, const std::string &path) {
         case GRASS_PIXEL: // grass
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, (float)upscale(x),
-                                     (float)upscale(y));
+          registry.emplace<position>(entity, geom::Point{pos1});
           registry.emplace<sprite>(
               entity, SDL_Rect{32, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -76,8 +72,7 @@ void World::load_tiles(int layer, const std::string &path) {
         case WATER_PIXEL: // water
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, (float)upscale(x),
-                                     (float)upscale(y));
+          registry.emplace<position>(entity, geom::Point{pos1});
           registry.emplace<sprite>(
               entity, SDL_Rect{0, 32, upscale(1), upscale(1)}, layer);
           break;
@@ -85,8 +80,7 @@ void World::load_tiles(int layer, const std::string &path) {
         case SAND_PIXEL: // sand
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, (float)upscale(x),
-                                     (float)upscale(y));
+          registry.emplace<position>(entity, geom::Point{pos1});
           registry.emplace<sprite>(
               entity, SDL_Rect{48, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -94,17 +88,12 @@ void World::load_tiles(int layer, const std::string &path) {
         case BRICK_PIXEL: // brick
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, (float)upscale(x),
-                                     (float)upscale(y));
+          registry.emplace<position>(entity, geom::Point{pos1});
           registry.emplace<body>(
-              entity,
-              tree.add(entity, aabb::AABB{(float)upscale(x), (float)upscale(y),
-                                          (float)upscale(x + 1),
-                                          (float)upscale(y + 1)}),
-              .0f, true);
-          registry.emplace<velocity>(entity, .0f, .0f);
-          registry.emplace<acceleration>(entity, .0f, .0f);
-          registry.emplace<force>(entity, .0f, .0f);
+              entity, tree.add(entity, aabb::AABB{pos1, pos2}), .0f, true);
+          registry.emplace<velocity>(entity, geom::Vector{.0f, .0f});
+          registry.emplace<acceleration>(entity, geom::Vector{.0f, .0f});
+          registry.emplace<force>(entity, geom::Vector{.0f, .0f});
           registry.emplace<sprite>(
               entity, SDL_Rect{64, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -112,17 +101,12 @@ void World::load_tiles(int layer, const std::string &path) {
         case CRATE_PIXEL: // crate
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, (float)upscale(x),
-                                     (float)upscale(y));
+          registry.emplace<position>(entity, geom::Point{pos1});
           registry.emplace<body>(
-              entity,
-              tree.add(entity, aabb::AABB{(float)upscale(x), (float)upscale(y),
-                                          (float)upscale(x + 1),
-                                          (float)upscale(y + 1)}),
-              .02f, true);
-          registry.emplace<velocity>(entity, .0f, .0f);
-          registry.emplace<acceleration>(entity, .0f, .0f);
-          registry.emplace<force>(entity, .0f, .0f);
+              entity, tree.add(entity, aabb::AABB{pos1, pos2}), .02f, true);
+          registry.emplace<velocity>(entity, geom::Vector{.0f, .0f});
+          registry.emplace<acceleration>(entity, geom::Vector{.0f, .0f});
+          registry.emplace<force>(entity, geom::Vector{.0f, .0f});
           registry.emplace<sprite>(
               entity, SDL_Rect{80, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -130,8 +114,7 @@ void World::load_tiles(int layer, const std::string &path) {
         case LAVA_PIXEL: // lava
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, (float)upscale(x),
-                                     (float)upscale(y));
+          registry.emplace<position>(entity, geom::Point{pos1});
           registry.emplace<sprite>(
               entity, SDL_Rect{0, 48, upscale(1), upscale(1)}, layer);
           break;
@@ -167,19 +150,19 @@ void World::handle_input() {
         switch (event.key.keysym.sym) {
         case SDLK_a:
         case SDLK_LEFT:
-          force.dx = -1.0f;
+          force.x = -1.0f;
           break;
         case SDLK_d:
         case SDLK_RIGHT:
-          force.dx = 1.0f;
+          force.x = 1.0f;
           break;
         case SDLK_w:
         case SDLK_UP:
-          force.dy = -1.0f;
+          force.y = -1.0f;
           break;
         case SDLK_s:
         case SDLK_DOWN:
-          force.dy = 1.0f;
+          force.y = 1.0f;
           break;
         case SDLK_p:
           tree.print();
@@ -192,23 +175,23 @@ void World::handle_input() {
         switch (event.key.keysym.sym) {
         case SDLK_a:
         case SDLK_LEFT:
-          if (force.dx < .0f)
-            force.dx = .0f;
+          if (force.x < .0f)
+            force.x = .0f;
           break;
         case SDLK_d:
         case SDLK_RIGHT:
-          if (force.dx > .0f)
-            force.dx = .0f;
+          if (force.x > .0f)
+            force.x = .0f;
           break;
         case SDLK_w:
         case SDLK_UP:
-          if (force.dy < .0f)
-            force.dy = .0f;
+          if (force.y < .0f)
+            force.y = .0f;
           break;
         case SDLK_s:
         case SDLK_DOWN:
-          if (force.dy > .0f)
-            force.dy = .0f;
+          if (force.y > .0f)
+            force.y = .0f;
           break;
         case SDLK_t:
           show_tree = !show_tree;
@@ -227,35 +210,32 @@ void World::handle_input() {
 void World::calc_acceleration() {
   auto view = registry.view<body, acceleration, force>();
   view.each([&](auto &body, auto &acc, auto &force) {
-    acc.dx = force.dx * body.inverse_mass;
-    acc.dy = force.dy * body.inverse_mass;
+    acc.x = force.x * body.inverse_mass;
+    acc.y = force.y * body.inverse_mass;
   });
 }
 
 void World::calc_velocity() {
   auto view = registry.view<velocity, acceleration>();
   view.each([&](auto &vel, auto &acc) {
-    if (std::abs(vel.dx) < 0.001f)
-      vel.dx = acc.dx;
+    if (std::abs(vel.x) < 0.001f)
+      vel.x = acc.x;
     else
-      vel.dx += acc.dx - (vel.dx / 10); // TODO: remove slowdown
-    if (std::abs(vel.dy) < 0.001f)
-      vel.dy = acc.dy;
+      vel.x += acc.x - (vel.x / 10); // TODO: remove slowdown
+    if (std::abs(vel.y) < 0.001f)
+      vel.y = acc.y;
     else
-      vel.dy += acc.dy - (vel.dy / 10); // TODO: remove slowdown
+      vel.y += acc.y - (vel.y / 10); // TODO: remove slowdown
   });
 }
 
 void World::calc_position() {
   auto view = registry.view<position, velocity, body>();
   view.each([&](auto &pos, auto &vel, auto &body) {
-    pos.x += vel.dx;
-    pos.y += vel.dy;
-    tree[body.node].aabb.x1 += vel.dx;
-    tree[body.node].aabb.y1 += vel.dy;
-    tree[body.node].aabb.x2 += vel.dx;
-    tree[body.node].aabb.y2 += vel.dy;
-    if (vel.dx != 0 || vel.dy != 0)
+    pos += vel;
+    tree[body.node].aabb.p1 += vel;
+    tree[body.node].aabb.p2 += vel;
+    if (vel != geom::Vector{.0f, .0f})
       body.moved = true;
   });
 }
@@ -281,81 +261,68 @@ void World::detect_collistions() {
             projection_correct(p, p1, tree[b.node].aabb, tree[b1.node].aabb);
           }
           if (b1.inverse_mass > 0)
-            impulse_correct(p, p1, tree[b.node].aabb, tree[b1.node].aabb, v, v1,
-                            b, b1);
+            impulse_correct(tree[b.node].aabb, tree[b1.node].aabb, v, v1, b,
+                            b1);
         }
       }
     }
   });
 }
 
-void impulse_correct(const position &p1, const position &p2,
-                     const aabb::AABB &aabb1, const aabb::AABB &aabb2,
+void impulse_correct(const aabb::AABB &aabb1, const aabb::AABB &aabb2,
                      velocity &v1, velocity &v2, body &b1, body &b2) {
-  auto center1_x = aabb1.x1 + (aabb1.x2 - aabb1.x1) / 2;
-  auto center1_y = aabb1.y1 + (aabb1.y2 - aabb1.y1) / 2;
-  auto center2_x = aabb2.x1 + (aabb2.x2 - aabb2.x1) / 2;
-  auto center2_y = aabb2.y1 + (aabb2.y2 - aabb2.y1) / 2;
-  auto nx = center1_x - center2_x;
-  auto ny = center1_y - center2_y;
-  auto length = std::sqrtf(std::powf(nx, 2) + std::powf(ny, 2));
-  nx /= length;
-  ny /= length;
-  velocity relative{v1.dx - v2.dx, v1.dy - v2.dy};
+  position center1{(aabb1.p1 + aabb1.p2) / 2};
+  position center2{(aabb2.p1 + aabb2.p2) / 2};
+  velocity normal{(center1 - center2).normalize()};
   float e = 1.0f; // TODO replace it with body field
-  auto normilized = -(1 + e) * (nx * relative.dx + ny * relative.dy);
+  auto normilized =
+      -(1 + e) * (normal * (v1 - v2)); // v1 - v2 is relative speed
   auto impulse = normilized / (b1.inverse_mass + b2.inverse_mass);
-  v1.dx += impulse * b1.inverse_mass * nx;
-  v1.dy += impulse * b1.inverse_mass * ny;
-  v2.dx -= impulse * b2.inverse_mass * nx;
-  v2.dy -= impulse * b2.inverse_mass * ny;
+  v1 += normal * impulse * b1.inverse_mass;
+  v2 -= normal * impulse * b2.inverse_mass;
 }
 
 void projection_correct(position &p1, aabb::AABB &aabb1, aabb::AABB &aabb2) {
-  auto center1_x = aabb1.x1 + (aabb1.x2 - aabb1.x1) / 2;
-  auto center1_y = aabb1.y1 + (aabb1.y2 - aabb1.y1) / 2;
-  auto center2_x = aabb2.x1 + (aabb2.x2 - aabb2.x1) / 2;
-  auto center2_y = aabb2.y1 + (aabb2.y2 - aabb2.y1) / 2;
-  auto vector_x = center1_x - center2_x;
-  auto vector_y = center1_y - center2_y;
-  auto dx = vector_x > 0 ? aabb1.x1 - aabb2.x2 : aabb1.x2 - aabb2.x1;
-  auto dy = vector_y > 0 ? aabb1.y1 - aabb2.y2 : aabb1.y2 - aabb2.y1;
-  if (std::abs(vector_x) < std::abs(vector_y)) {
+  position center1{(aabb1.p1 + aabb1.p2) / 2};
+  position center2{(aabb2.p1 + aabb2.p2) / 2};
+  auto vector = center1 - center2;
+  auto dx = vector.x > 0 ? aabb1.p1.x - aabb2.p2.x : aabb1.p2.x - aabb2.p1.x;
+  auto dy = vector.y > 0 ? aabb1.p1.y - aabb2.p2.y : aabb1.p2.y - aabb2.p1.y;
+  if (std::abs(vector.x) < std::abs(vector.y)) {
     p1.y -= dy;
-    aabb1.y1 -= dy;
-    aabb1.y2 -= dy;
-  } else if (std::abs(vector_x) > std::abs(vector_y)) {
+    aabb1.p1.y -= dy;
+    aabb1.p2.y -= dy;
+  } else if (std::abs(vector.x) > std::abs(vector.y)) {
     p1.x -= dx;
-    aabb1.x1 -= dx;
-    aabb1.x2 -= dx;
+    aabb1.p1.x -= dx;
+    aabb1.p2.x -= dx;
   }
 }
 
 void projection_correct(position &p1, position &p2, aabb::AABB &aabb1,
                         aabb::AABB &aabb2) {
-  auto center1_x = aabb1.x1 + (aabb1.x2 - aabb1.x1) / 2;
-  auto center1_y = aabb1.y1 + (aabb1.y2 - aabb1.y1) / 2;
-  auto center2_x = aabb2.x1 + (aabb2.x2 - aabb2.x1) / 2;
-  auto center2_y = aabb2.y1 + (aabb2.y2 - aabb2.y1) / 2;
-  auto vector_x = center1_x - center2_x;
-  auto vector_y = center1_y - center2_y;
-  auto dx = (vector_x > 0 ? aabb1.x1 - aabb2.x2 : aabb1.x2 - aabb2.x1) / 2;
-  auto dy = (vector_y > 0 ? aabb1.y1 - aabb2.y2 : aabb1.y2 - aabb2.y1) / 2;
-  if (std::abs(vector_x) <= std::abs(vector_y)) {
+  position center1{(aabb1.p1 + aabb1.p2) / 2};
+  position center2{(aabb2.p1 + aabb2.p2) / 2};
+  auto vector = center1 - center2;
+  auto dx =
+      (vector.x > 0 ? aabb1.p1.x - aabb2.p2.x : aabb1.p2.x - aabb2.p1.x) / 2;
+  auto dy =
+      (vector.y > 0 ? aabb1.p1.y - aabb2.p2.y : aabb1.p2.y - aabb2.p1.y) / 2;
+  if (std::abs(vector.x) <= std::abs(vector.y)) {
     p1.y -= dy;
     p2.y += dy;
-    aabb1.y1 -= dy;
-    aabb1.y2 -= dy;
-    aabb2.y1 += dy;
-    aabb2.y2 += dy;
+    aabb1.p1.y -= dy;
+    aabb1.p2.y -= dy;
+    aabb2.p1.y += dy;
+    aabb2.p2.y += dy;
   }
-  if (std::abs(vector_x) >= std::abs(vector_y)) {
+  if (std::abs(vector.x) >= std::abs(vector.y)) {
     p1.x -= dx;
     p2.x += dx;
-    aabb1.x1 -= dx;
-    aabb1.x2 -= dx;
-    aabb2.x1 += dx;
-    aabb2.x2 += dx;
+    aabb1.p1.x -= dx;
+    aabb1.p2.x -= dx;
+    aabb2.p1.x += dx;
+    aabb2.p2.x += dx;
   }
 }
 
@@ -396,11 +363,11 @@ void World::render_entities(Render &render) {
 void World::render_tree(Render &render) {
   for (auto i = 0; i < tree.size(); ++i) {
     if (tree[i].is_leaf()) {
-      render.draw_frame(tree[i].aabb.x1, tree[i].aabb.y1, tree[i].aabb.x2,
-                        tree[i].aabb.y2, 0xFF00FF00);
+      render.draw_frame(tree[i].aabb.p1.x, tree[i].aabb.p1.y, tree[i].aabb.p2.x,
+                        tree[i].aabb.p2.y, 0xFF00FF00);
     } else {
-      render.draw_frame(tree[i].fatten.x1, tree[i].fatten.y1, tree[i].fatten.x2,
-                        tree[i].fatten.y2, 0xFF0000FF);
+      render.draw_frame(tree[i].fatten.p1.x, tree[i].fatten.p1.y,
+                        tree[i].fatten.p2.x, tree[i].fatten.p2.y, 0xFF0000FF);
     }
   }
 }

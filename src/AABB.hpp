@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "Geometry.hpp"
+
 constexpr unsigned int NULL_NODE = 0xFFFFFFFF;
 
 namespace aabb {
@@ -13,7 +15,8 @@ namespace aabb {
 class AABB {
 public:
   AABB(float x1, float y1, float x2, float y2);
-  float x1, y1, x2, y2;
+  AABB(geom::Point<float> p1, geom::Point<float> p2);
+  geom::Point<float> p1, p2;
   AABB unite(const AABB &) const;
   bool contains(const AABB &) const;
   bool overlaps(const AABB &) const;

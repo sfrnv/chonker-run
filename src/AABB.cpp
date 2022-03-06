@@ -6,23 +6,26 @@
 
 namespace aabb {
 
-AABB::AABB(float x1, float y1, float x2, float y2)
-    : x1(x1), y1(y1), x2(x2), y2(y2){};
+AABB::AABB(float x1, float y1, float x2, float y2) : p1(x1, y1), p2(x2, y2){};
+
+AABB::AABB(geom::Point<float> p1, geom::Point<float> p2) : p1(p1), p2(p2){};
 
 AABB AABB::unite(const AABB &aabb) const {
-  return AABB(std::min(x1, aabb.x1), std::min(y1, aabb.y1),
-              std::max(x2, aabb.x2), std::max(y2, aabb.y2));
+  return AABB(std::min(p1.x, aabb.p1.x), std::min(p1.y, aabb.p1.y),
+              std::max(p2.x, aabb.p2.x), std::max(p2.y, aabb.p2.y));
 };
 
 bool AABB::contains(const AABB &aabb) const {
-  return x1 <= aabb.x1 && y1 <= aabb.y1 && x2 >= aabb.x2 && y2 >= aabb.y2;
+  return p1.x <= aabb.p1.x && p1.y <= aabb.p1.y && p2.x >= aabb.p2.x &&
+         p2.y >= aabb.p2.y;
 }
 
 bool AABB::overlaps(const AABB &aabb) const {
-  return !(x1 >= aabb.x2 || y1 >= aabb.y2 || x2 <= aabb.x1 || y2 <= aabb.y1);
+  return !(p1.x >= aabb.p2.x || p1.y >= aabb.p2.y || p2.x <= aabb.p1.x ||
+           p2.y <= aabb.p1.y);
 }
 
-unsigned int AABB::area() { return (x2 - x1) * (y2 - y1); }
+unsigned int AABB::area() { return (p2.x - p1.x) * (p2.y - p1.y); }
 
 Node::Node()
     : id(entt::null), aabb(0, 0, 0, 0), fatten(0, 0, 0, 0), next(NULL_NODE),
@@ -337,10 +340,10 @@ void Tree::pull_node(unsigned int node) {
 
 void Tree::update_node(unsigned int node, float margin) {
   if (nodes[node].is_leaf()) {
-    nodes[node].fatten.x1 = nodes[node].aabb.x1 - margin;
-    nodes[node].fatten.y1 = nodes[node].aabb.y1 - margin;
-    nodes[node].fatten.x2 = nodes[node].aabb.x2 + margin;
-    nodes[node].fatten.y2 = nodes[node].aabb.y2 + margin;
+    nodes[node].fatten.p1.x = nodes[node].aabb.p1.x - margin;
+    nodes[node].fatten.p1.y = nodes[node].aabb.p1.y - margin;
+    nodes[node].fatten.p2.x = nodes[node].aabb.p2.x + margin;
+    nodes[node].fatten.p2.y = nodes[node].aabb.p2.y + margin;
   } else {
     auto left = nodes[node].left;
     auto right = nodes[node].right;
