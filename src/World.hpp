@@ -65,16 +65,17 @@ private:
   void calc_acceleration();
   void calc_velocity();
   void calc_position();
-  void detect_collistions();
+  void detect_collisions();
   void focus_camera(Render &render);
   void render_entities(Render &render);
   void render_tree(Render &render);
 };
 
 void impulse_correct(const aabb::AABB &aabb1, const aabb::AABB &aabb2,
-                     velocity &v1, velocity &v2, body &b1, body &b2);
+                     velocity &v1, velocity &v2, const body &b1,
+                     const body &b2);
 
 void projection_correct(position &p1, aabb::AABB &aabb1, aabb::AABB &aabb2);
 
 void projection_correct(position &p1, position &p2, aabb::AABB &aabb1,
-                        aabb::AABB &aabb2);
+                        aabb::AABB &aabb2, const body &b1, const body &b2);

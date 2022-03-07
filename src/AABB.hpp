@@ -17,7 +17,11 @@ public:
   AABB(float x1, float y1, float x2, float y2);
   AABB(geom::Point<float> p1, geom::Point<float> p2);
   geom::Point<float> p1, p2;
+  float width() const;
+  float height() const;
+  geom::Point<float> center() const;
   AABB unite(const AABB &) const;
+  AABB overlap(const AABB &) const;
   bool contains(const AABB &) const;
   bool overlaps(const AABB &) const;
   unsigned int area();

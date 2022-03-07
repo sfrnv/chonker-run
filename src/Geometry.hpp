@@ -117,6 +117,14 @@ public:
   }
 };
 
+template <typename T> Point<T> min(const Point<T> &p1, const Point<T> &p2) {
+  return (Point<T>(p1.x < p2.x ? p1.x : p2.x, p1.y < p2.y ? p1.y : p2.y));
+}
+
+template <typename T> Point<T> max(const Point<T> &p1, const Point<T> &p2) {
+  return (Point<T>(p1.x > p2.x ? p1.x : p2.x, p1.y > p2.y ? p1.y : p2.y));
+}
+
 } // namespace geom
 
 #endif // GEOMETRY_H
