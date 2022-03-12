@@ -284,13 +284,12 @@ void projection_correct(position &p1, position &p2, aabb::AABB &aabb1,
                (b1.inverse_mass + b2.inverse_mass);
   auto delta1 = delta * b1.inverse_mass;
   auto delta2 = delta * b2.inverse_mass;
-  if (std::abs(vector.x) <= std::abs(vector.y)) {
+  if (std::abs(vector.x) < std::abs(vector.y)) {
     p1.y -= delta1.y;
     p2.y += delta2.y;
     aabb1.pos.y -= delta1.y;
     aabb2.pos.y += delta2.y;
-  }
-  if (std::abs(vector.x) >= std::abs(vector.y)) {
+  } else if (std::abs(vector.x) > std::abs(vector.y)) {
     p1.x -= delta1.x;
     p2.x += delta2.x;
     aabb1.pos.x -= delta1.x;
