@@ -301,20 +301,10 @@ void World::focus_camera(Render &render) {
   auto view = registry.view<position, focus>();
   view.each([&](auto &pos, auto &focus) {
     if (focus) {
-      int x_offset = pos.x - render.viewport.w / 2; // TODO: replace with float
-      int y_offset = pos.y - render.viewport.h / 2; // TODO: replace with float
-      if (x_offset < 0) {
-        x_offset = 0;
-      } else if (x_offset > width - render.viewport.w) {
-        x_offset = width - render.viewport.w;
-      }
-      if (y_offset < 0) {
-        y_offset = 0;
-      } else if (y_offset > height - render.viewport.h) {
-        y_offset = height - render.viewport.h;
-      }
-      render.viewport.x = x_offset;
-      render.viewport.y = y_offset;
+      render.viewport.x = std::clamp<float>(pos.x - render.viewport.w * 0.5, 0,
+                                            width - render.viewport.w);
+      render.viewport.y = std::clamp<float>(pos.y - render.viewport.h * 0.5, 0,
+                                            height - render.viewport.h);
     }
   });
 }

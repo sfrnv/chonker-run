@@ -21,8 +21,10 @@ Render::Render(int width, int height, const std::string &title,
       nullptr) {
     throw std::runtime_error(SDL_GetError());
   }
-  if ((renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE)) ==
-      nullptr) {
+  if ((renderer = SDL_CreateRenderer(
+           window, -1,
+           SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC |
+               SDL_RENDERER_TARGETTEXTURE)) == nullptr) {
     throw std::runtime_error(SDL_GetError());
   }
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
