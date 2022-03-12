@@ -6,35 +6,35 @@
 
 namespace aabb {
 
-AABB::AABB(float x1, float y1, float x2, float y2) : p1(x1, y1), p2(x2, y2){};
+AABB::AABB(float x, float y, float width, float height)
+    : pos(x, y), dim(width, height){};
 
-AABB::AABB(geom::Point<float> p1, geom::Point<float> p2) : p1(p1), p2(p2){};
+AABB::AABB(geom::Point<float> pos, geom::Vector<float> dim)
+    : pos(pos), dim(dim){};
 
 AABB AABB::unite(const AABB &aabb) const {
-  return AABB(geom::min(p1, aabb.p1), geom::max(p2, aabb.p2));
+  auto p1 = geom::min(pos, aabb.pos);
+  auto p2 = geom::max(pos + dim, aabb.pos + aabb.dim);
+  return AABB(p1, p2 - p1);
 };
 
-float AABB::width() const { return p2.x - p1.x; }
-
-float AABB::height() const { return p2.y - p1.y; }
-
-geom::Point<float> AABB::center() const { return (p1 + p2) * 0.5f; }
+geom::Point<float> AABB::center() const { return pos + dim * 0.5f; }
 
 AABB AABB::overlap(const AABB &aabb) const {
-  return AABB(geom::max(p1, aabb.p1), geom::min(p2, aabb.p2));
+  auto p1 = geom::max(pos, aabb.pos);
+  auto p2 = geom::min(pos + dim, aabb.pos + aabb.dim);
+  return AABB(p1, p2 - p1);
 };
 
 bool AABB::contains(const AABB &aabb) const {
-  return p1.x <= aabb.p1.x && p1.y <= aabb.p1.y && p2.x >= aabb.p2.x &&
-         p2.y >= aabb.p2.y;
+  return pos <= aabb.pos && (pos + dim) >= (aabb.pos + aabb.dim);
 }
 
 bool AABB::overlaps(const AABB &aabb) const {
-  return p1.x < aabb.p2.x && p1.y < aabb.p2.y && p2.x > aabb.p1.x &&
-         p2.y > aabb.p1.y;
+  return pos < (aabb.pos + aabb.dim) && (pos + dim) > aabb.pos;
 }
 
-unsigned int AABB::area() { return (p2.x - p1.x) * (p2.y - p1.y); }
+unsigned int AABB::area() { return dim.x * dim.y; }
 
 Node::Node()
     : id(entt::null), aabb(0, 0, 0, 0), fatten(0, 0, 0, 0), next(NULL_NODE),
@@ -349,10 +349,8 @@ void Tree::pull_node(unsigned int node) {
 
 void Tree::update_node(unsigned int node, float margin) {
   if (nodes[node].is_leaf()) {
-    nodes[node].fatten.p1.x = nodes[node].aabb.p1.x - margin;
-    nodes[node].fatten.p1.y = nodes[node].aabb.p1.y - margin;
-    nodes[node].fatten.p2.x = nodes[node].aabb.p2.x + margin;
-    nodes[node].fatten.p2.y = nodes[node].aabb.p2.y + margin;
+    nodes[node].fatten.pos = nodes[node].aabb.pos - geom::Vector(margin);
+    nodes[node].fatten.dim = nodes[node].aabb.dim + geom::Vector(margin * 2);
   } else {
     auto left = nodes[node].left;
     auto right = nodes[node].right;

@@ -1,6 +1,8 @@
 #ifndef GEOMETRY_H
 #define GEOMETRY_H
 
+#include <iostream>
+
 namespace geom {
 
 template <typename T> class Vector {
@@ -11,6 +13,10 @@ public:
   Vector(T x, T y) {
     this->x = x;
     this->y = y;
+  }
+  Vector(T xy) {
+    this->x = xy;
+    this->y = xy;
   }
 
   Vector &operator+=(const Vector &v) {
@@ -65,9 +71,22 @@ public:
 
   bool operator!=(const Vector &v) const { return ((x != v.x) || (y != v.y)); }
 
+  bool operator<=(const Vector &v) const { return ((x <= v.x) && (y <= v.y)); }
+
+  bool operator<(const Vector &v) const { return ((x < v.x) && (y < v.y)); }
+
+  bool operator>=(const Vector &v) const { return ((x >= v.x) && (y >= v.y)); }
+
+  bool operator>(const Vector &v) const { return ((x > v.x) && (y > v.y)); }
+
   Vector &normalize(void) { return (*this /= sqrtf(x * x + y * y)); }
 
   Vector &rotate(T angle);
+
+  friend std::ostream &operator<<(std::ostream &os, const Vector &v) {
+    os << '[' << v.x << ':' << v.y << ']';
+    return os;
+  };
 };
 
 template <typename T> class Point : public Vector<T> {

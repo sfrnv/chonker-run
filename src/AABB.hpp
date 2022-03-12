@@ -14,11 +14,11 @@ namespace aabb {
 
 class AABB {
 public:
-  AABB(float x1, float y1, float x2, float y2);
-  AABB(geom::Point<float> p1, geom::Point<float> p2);
-  geom::Point<float> p1, p2;
-  float width() const;
-  float height() const;
+  AABB(float x, float y, float width, float height);
+  AABB(geom::Point<float> pos, geom::Vector<float> dim);
+  AABB(geom::Point<float> pos, float width, float height);
+  geom::Point<float> pos;
+  geom::Vector<float> dim;
   geom::Point<float> center() const;
   AABB unite(const AABB &) const;
   AABB overlap(const AABB &) const;

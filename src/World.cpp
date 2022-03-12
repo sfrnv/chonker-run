@@ -45,15 +45,15 @@ void World::load_tiles(int layer, const std::string &path) {
     height = upscale(image->h);
     for (auto y = 0; y < image->w; ++y) {
       for (auto x = 0; x < image->h; ++x) {
-        auto pos1 = geom::Point{(float)upscale(x), (float)upscale(y)};
-        auto pos2 = geom::Point{(float)upscale(x + 1), (float)upscale(y + 1)};
+        auto pos = geom::Point{(float)upscale(x), (float)upscale(y)};
+        auto dim = geom::Point{(float)upscale(1), (float)upscale(1)};
         switch (get_pixel32(image, x, y)) {
         case STONE_PIXEL: // stone
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, geom::Point{pos1});
-          registry.emplace<body>(
-              entity, tree.add(entity, aabb::AABB{pos1, pos2}), .0f, true);
+          registry.emplace<position>(entity, geom::Point{pos});
+          registry.emplace<body>(entity, tree.add(entity, aabb::AABB{pos, dim}),
+                                 .0f, true);
           registry.emplace<velocity>(entity, geom::Vector{.0f, .0f});
           registry.emplace<acceleration>(entity, geom::Vector{.0f, .0f});
           registry.emplace<force>(entity, geom::Vector{.0f, .0f});
@@ -64,7 +64,7 @@ void World::load_tiles(int layer, const std::string &path) {
         case GRASS_PIXEL: // grass
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, geom::Point{pos1});
+          registry.emplace<position>(entity, geom::Point{pos});
           registry.emplace<sprite>(
               entity, SDL_Rect{32, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -72,7 +72,7 @@ void World::load_tiles(int layer, const std::string &path) {
         case WATER_PIXEL: // water
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, geom::Point{pos1});
+          registry.emplace<position>(entity, geom::Point{pos});
           registry.emplace<sprite>(
               entity, SDL_Rect{0, 32, upscale(1), upscale(1)}, layer);
           break;
@@ -80,7 +80,7 @@ void World::load_tiles(int layer, const std::string &path) {
         case SAND_PIXEL: // sand
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, geom::Point{pos1});
+          registry.emplace<position>(entity, geom::Point{pos});
           registry.emplace<sprite>(
               entity, SDL_Rect{48, 0, upscale(1), upscale(1)}, layer);
           break;
@@ -88,9 +88,9 @@ void World::load_tiles(int layer, const std::string &path) {
         case BRICK_PIXEL: // brick
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, geom::Point{pos1});
-          registry.emplace<body>(
-              entity, tree.add(entity, aabb::AABB{pos1, pos2}), .0f, true);
+          registry.emplace<position>(entity, geom::Point{pos});
+          registry.emplace<body>(entity, tree.add(entity, aabb::AABB{pos, dim}),
+                                 .0f, true);
           registry.emplace<velocity>(entity, geom::Vector{.0f, .0f});
           registry.emplace<acceleration>(entity, geom::Vector{.0f, .0f});
           registry.emplace<force>(entity, geom::Vector{.0f, .0f});
@@ -101,9 +101,9 @@ void World::load_tiles(int layer, const std::string &path) {
         case CRATE_PIXEL: // crate
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, geom::Point{pos1});
-          registry.emplace<body>(
-              entity, tree.add(entity, aabb::AABB{pos1, pos2}), .02f, true);
+          registry.emplace<position>(entity, geom::Point{pos});
+          registry.emplace<body>(entity, tree.add(entity, aabb::AABB{pos, dim}),
+                                 .02f, true);
           registry.emplace<velocity>(entity, geom::Vector{.0f, .0f});
           registry.emplace<acceleration>(entity, geom::Vector{.0f, .0f});
           registry.emplace<force>(entity, geom::Vector{.0f, .0f});
@@ -114,7 +114,7 @@ void World::load_tiles(int layer, const std::string &path) {
         case LAVA_PIXEL: // lava
         {
           const auto entity = registry.create();
-          registry.emplace<position>(entity, geom::Point{pos1});
+          registry.emplace<position>(entity, geom::Point{pos});
           registry.emplace<sprite>(
               entity, SDL_Rect{0, 48, upscale(1), upscale(1)}, layer);
           break;
@@ -233,8 +233,7 @@ void World::calc_position() {
   auto view = registry.view<position, velocity, body>();
   view.each([&](auto &pos, auto &vel, auto &body) {
     pos += vel;
-    tree[body.node].aabb.p1 += vel;
-    tree[body.node].aabb.p2 += vel;
+    tree[body.node].aabb.pos += vel;
     if (vel != geom::Vector{.0f, .0f})
       body.moved = true;
   });
@@ -280,27 +279,22 @@ void projection_correct(position &p1, position &p2, aabb::AABB &aabb1,
                         aabb::AABB &aabb2, const body &b1, const body &b2) {
   auto overlap = aabb1.overlap(aabb2);
   auto vector = aabb1.center() - aabb2.center();
-  auto delta =
-      geom::Vector{vector.x >= 0 ? -overlap.width() : overlap.width(),
-                   vector.y >= 0 ? -overlap.height() : overlap.height()} /
-      (b1.inverse_mass + b2.inverse_mass);
+  auto delta = geom::Vector{vector.x >= 0 ? -overlap.dim.x : overlap.dim.x,
+                            vector.y >= 0 ? -overlap.dim.y : overlap.dim.y} /
+               (b1.inverse_mass + b2.inverse_mass);
   auto delta1 = delta * b1.inverse_mass;
   auto delta2 = delta * b2.inverse_mass;
   if (std::abs(vector.x) <= std::abs(vector.y)) {
     p1.y -= delta1.y;
     p2.y += delta2.y;
-    aabb1.p1.y -= delta1.y;
-    aabb1.p2.y -= delta1.y;
-    aabb2.p1.y += delta2.y;
-    aabb2.p2.y += delta2.y;
+    aabb1.pos.y -= delta1.y;
+    aabb2.pos.y += delta2.y;
   }
   if (std::abs(vector.x) >= std::abs(vector.y)) {
     p1.x -= delta1.x;
     p2.x += delta2.x;
-    aabb1.p1.x -= delta1.x;
-    aabb1.p2.x -= delta1.x;
-    aabb2.p1.x += delta2.x;
-    aabb2.p2.x += delta2.x;
+    aabb1.pos.x -= delta1.x;
+    aabb2.pos.x += delta2.x;
   }
 }
 
@@ -341,11 +335,14 @@ void World::render_entities(Render &render) {
 void World::render_tree(Render &render) {
   for (auto i = 0; i < tree.size(); ++i) {
     if (tree[i].is_leaf()) {
-      render.draw_frame(tree[i].aabb.p1.x, tree[i].aabb.p1.y, tree[i].aabb.p2.x,
-                        tree[i].aabb.p2.y, 0xFF00FF00);
+      render.draw_frame(tree[i].aabb.pos.x, tree[i].aabb.pos.y,
+                        tree[i].aabb.pos.x + tree[i].aabb.dim.x,
+                        tree[i].aabb.pos.y + tree[i].aabb.dim.y, 0xFF00FF00);
     } else {
-      render.draw_frame(tree[i].fatten.p1.x, tree[i].fatten.p1.y,
-                        tree[i].fatten.p2.x, tree[i].fatten.p2.y, 0xFF0000FF);
+      render.draw_frame(tree[i].fatten.pos.x, tree[i].fatten.pos.y,
+                        tree[i].fatten.pos.x + tree[i].fatten.dim.x,
+                        tree[i].fatten.pos.y + tree[i].fatten.dim.y,
+                        0xFF0000FF);
     }
   }
 }
