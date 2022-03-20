@@ -210,22 +210,15 @@ void World::handle_input() {
 void World::calc_acceleration() {
   auto view = registry.view<body, acceleration, force>();
   view.each([&](auto &body, auto &acc, auto &force) {
-    acc.x = force.x * body.inverse_mass;
-    acc.y = force.y * body.inverse_mass;
+    acc = {force * body.inverse_mass};
   });
 }
 
 void World::calc_velocity() {
   auto view = registry.view<velocity, acceleration>();
   view.each([&](auto &vel, auto &acc) {
-    if (std::abs(vel.x) < 0.001f)
-      vel.x = acc.x;
-    else
-      vel.x += acc.x - (vel.x * 0.1f); // TODO: remove slowdown
-    if (std::abs(vel.y) < 0.001f)
-      vel.y = acc.y;
-    else
-      vel.y += acc.y - (vel.y * 0.1f); // TODO: remove slowdown
+    vel *= 0.9f; // TODO: remove slowdown, use friction instead
+    vel += acc;
   });
 }
 
